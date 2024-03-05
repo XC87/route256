@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"route256.ozon.ru/project/cart/internal"
+	"time"
 )
 
 const (
@@ -30,6 +31,7 @@ func NewProductService(config *internal.Config) *ProductService {
 			RetryCodes: config.ProductServiceRetryStatus,
 			MaxRetries: config.ProductServiceRetryCount,
 		},
+		Timeout: 5 * time.Second,
 	}
 	return &ProductService{client: client, host: config.ProductServiceUrl, token: config.ProductServiceToken}
 }
