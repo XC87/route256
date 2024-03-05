@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/asaskevich/govalidator"
-	"github.com/justinas/alice"
 	"io"
 	"log"
 	"net/http"
 	"route256.ozon.ru/project/cart/internal/client/product"
-	"route256.ozon.ru/project/cart/internal/middleware"
 	"strconv"
 )
 
@@ -42,12 +40,12 @@ type Handler struct {
 }
 
 func (h *Handler) Register() {
-	chain := alice.New(middleware.LoggingMiddleware)
+	chain := []middlewareChain{loggingMiddleware}
 
-	http.Handle(addToCartURL, chain.ThenFunc(h.AddToCart))
-	http.Handle(deleteFromCartURL, chain.ThenFunc(h.DeleteItem))
-	http.Handle(deleteCartURL, chain.ThenFunc(h.DeleteItemsByUserId))
-	http.Handle(getCartURL, chain.ThenFunc(h.GetItemsByUserId))
+	http.Handle(addToCartURL, buildMiddleware(h.AddToCart, chain))
+	http.Handle(deleteFromCartURL, buildMiddleware(h.DeleteItem, chain))
+	http.Handle(deleteCartURL, buildMiddleware(h.DeleteItemsByUserId, chain))
+	http.Handle(getCartURL, buildMiddleware(h.GetItemsByUserId, chain))
 }
 
 func (h *Handler) AddToCart(w http.ResponseWriter, r *http.Request) {
