@@ -21,16 +21,16 @@ type ProductService struct {
 	token  string
 }
 
+func (service *ProductService) WithTransport(transport Transport) {
+	service.client.Transport = &transport
+}
+
 func NewProductService(config *config.Config) *ProductService {
 	// тут конечно вопрос, выносить ли это в main?
 	client := &http.Client{
 		Timeout: config.ProductServiceTimeout,
 	}
 	return &ProductService{client: client, host: config.ProductServiceUrl, token: config.ProductServiceToken}
-}
-
-func (service ProductService) WithTransport(transport Transport) {
-	service.client.Transport = &transport
 }
 
 var ErrProductNotFound = errors.New("product not found")
