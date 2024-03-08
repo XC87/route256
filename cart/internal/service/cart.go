@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"route256.ozon.ru/project/cart/internal/client/product"
-	"route256.ozon.ru/project/cart/internal/handler"
 	"sort"
 )
 
@@ -25,7 +24,7 @@ type ProductService interface {
 
 var (
 	ErrProductNotFound     = product.ErrProductNotFound
-	ErrProductCountInvalid = errors.New("item count invalide")
+	ErrProductCountInvalid = errors.New("item count invalid")
 	ErrUserInvalid         = errors.New("user invalid")
 )
 
@@ -72,7 +71,7 @@ func (cartService *CartService) DeleteItemsByUserId(userId int64) error {
 	return nil
 }
 
-func (cartService *CartService) GetItemsByUserId(userId int64) (*handler.CartResponse, error) {
+func (cartService *CartService) GetItemsByUserId(userId int64) (*CartResponse, error) {
 	if userId <= 0 {
 		return nil, ErrUserInvalid
 	}
@@ -86,21 +85,21 @@ func (cartService *CartService) GetItemsByUserId(userId int64) (*handler.CartRes
 		return skuIdList[i] < skuIdList[j]
 	})
 
-	var cartResponse handler.CartResponse
+	var cartResponse CartResponse
 	for _, skuId := range skuIdList {
 		productResponse, err := cartService.productService.GetProduct(skuId)
 		if err != nil {
 			return &cartResponse, err
 		}
-		item := &handler.CartItem{
+		item := &CartItem{
 			SkuID: skuId,
-			Name:  *productResponse.Name,
+			Name:  productResponse.Name,
 			Count: skuMap[skuId],
-			Price: *productResponse.Price,
+			Price: productResponse.Price,
 		}
 
 		cartResponse.Items = append(cartResponse.Items, *item)
-		cartResponse.TotalPrice += uint32(skuMap[skuId]) * *productResponse.Price
+		cartResponse.TotalPrice += uint32(skuMap[skuId]) * productResponse.Price
 	}
 
 	return &cartResponse, nil

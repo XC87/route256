@@ -7,7 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"route256.ozon.ru/project/cart/internal/client/product"
+	"route256.ozon.ru/project/cart/internal/service"
 	"strconv"
 )
 
@@ -24,7 +24,7 @@ const (
 
 type CartService interface {
 	AddItem(userId int64, skuId int64, count uint16) error
-	GetItemsByUserId(userId int64) (*CartResponse, error)
+	GetItemsByUserId(userId int64) (*service.CartResponse, error)
 	DeleteItem(userId int64, skuId int64) error
 	DeleteItemsByUserId(userId int64) error
 }
@@ -56,10 +56,13 @@ func (h *Handler) AddToCart(w http.ResponseWriter, r *http.Request) {
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "please try again later", http.StatusInternalServerError)
+		return
 	}
+	defer r.Body.Close()
 
 	if err = json.Unmarshal(data, &itemAdd); err != nil {
 		http.Error(w, "bad request arguments", http.StatusBadRequest)
+		return
 	}
 
 	if _, err = govalidator.ValidateStruct(itemAdd); err != nil {
@@ -68,7 +71,7 @@ func (h *Handler) AddToCart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.cartService.AddItem(itemAdd.UserId, itemAdd.SkuId, itemAdd.Count)
-	if errors.Is(err, product.ErrProductNotFound) {
+	if errors.Is(err, service.ErrProductNotFound) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -95,6 +98,7 @@ func (h *Handler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 
 	if err = json.Unmarshal(data, &itemDeleteReq); err != nil {
 		http.Error(w, "Bad request arguments", http.StatusBadRequest)
+		return
 	}
 
 	if _, err = govalidator.ValidateStruct(itemDeleteReq); err != nil {
@@ -152,7 +156,7 @@ func (h *Handler) GetItemsByUserId(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(status)
 	_, err = w.Write(jsonResponse)
 	if err != nil {
-		log.Fatalln("something when wrong on write answer")
+		log.Println("something when wrong on write answer")
 		return
 	}
 	return

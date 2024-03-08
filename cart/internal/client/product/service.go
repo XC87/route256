@@ -6,9 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"route256.ozon.ru/project/cart/internal"
+	"route256.ozon.ru/project/cart/internal/config"
 )
 
 const (
@@ -22,29 +21,28 @@ type ProductService struct {
 	token  string
 }
 
-func NewProductService(config *internal.Config) *ProductService {
+func NewProductService(config *config.Config) *ProductService {
 	// тут конечно вопрос, выносить ли это в main?
 	client := &http.Client{
-		Transport: &RetryTransport{
-			Transport:  http.DefaultTransport,
-			RetryCodes: config.ProductServiceRetryStatus,
-			MaxRetries: config.ProductServiceRetryCount,
-		},
 		Timeout: config.ProductServiceTimeout,
 	}
 	return &ProductService{client: client, host: config.ProductServiceUrl, token: config.ProductServiceToken}
+}
+
+func (service ProductService) WithTransport(transport Transport) {
+	service.client.Transport = &transport
 }
 
 var ErrProductNotFound = errors.New("product not found")
 
 func (service *ProductService) GetProduct(sku int64) (*ProductGetProductResponse, error) {
 	request := &ProductGetProductRequest{
-		&service.token,
-		&sku,
+		service.token,
+		sku,
 	}
 	jsonRequest, err := json.Marshal(request)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	resp, err := service.client.Post(service.host+getProductUrl, "application/json", bytes.NewReader(jsonRequest))
@@ -62,12 +60,12 @@ func (service *ProductService) GetProduct(sku int64) (*ProductGetProductResponse
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	var response ProductGetProductResponse
 	if err = json.Unmarshal(data, &response); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	return &response, nil

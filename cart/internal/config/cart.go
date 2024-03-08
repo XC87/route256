@@ -1,9 +1,8 @@
-package internal
+package config
 
 import (
 	"context"
 	"github.com/sethvargo/go-envconfig"
-	"log"
 	"time"
 )
 
@@ -16,13 +15,13 @@ type Config struct {
 	ProductServiceTimeout     time.Duration `env:"PRODUCT_SERVER_TIMEOUT, default=5s"`
 }
 
-func GetConfig() *Config {
+func GetConfig() (*Config, error) {
 	var config Config
 
 	ctx := context.Background()
 	if err := envconfig.Process(ctx, &config); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	return &config
+	return &config, nil
 }
