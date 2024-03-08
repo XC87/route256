@@ -8,13 +8,13 @@ import (
 	"time"
 )
 
-type RetryTransport struct {
+type Transport struct {
 	Transport  http.RoundTripper
 	RetryCodes []int
 	MaxRetries int
 }
 
-func (t *RetryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var resp *http.Response
 	var err error
 	var bodyBytes []byte
@@ -45,7 +45,7 @@ func (t *RetryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
-func (t *RetryTransport) shouldRetry(statusCode int) bool {
+func (t *Transport) shouldRetry(statusCode int) bool {
 	for _, code := range t.RetryCodes {
 		if statusCode == code {
 			return true
