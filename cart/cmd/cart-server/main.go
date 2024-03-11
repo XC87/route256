@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 	"net/http"
-	"route256.ozon.ru/project/cart/internal/client/product"
+	"route256.ozon.ru/project/cart/internal/clients/product"
 	"route256.ozon.ru/project/cart/internal/config"
-	"route256.ozon.ru/project/cart/internal/handler"
+	"route256.ozon.ru/project/cart/internal/handlers"
 	"route256.ozon.ru/project/cart/internal/repository"
 	"route256.ozon.ru/project/cart/internal/service"
 )
@@ -24,9 +24,9 @@ func main() {
 	})
 
 	memoryRepository := repository.NewMemoryRepository()
-	userFilesService := service.NewCartService(memoryRepository, productService)
+	cartService := service.NewCartService(memoryRepository, productService)
 
-	cartHandler := handler.NewCartHandler(userFilesService)
+	cartHandler := handlers.NewCartHandler(cartService)
 	cartHandler.Register()
 
 	log.Println("Starting server")
