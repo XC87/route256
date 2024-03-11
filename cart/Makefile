@@ -8,7 +8,6 @@ cover:
 	go test -v ./internal/service -covermode count -coverprofile=coverage.out.tmp
 	grep -vE "_mock.go" coverage.out.tmp > coverage.out
 	go tool cover -html=coverage.out
-	del coverage.out
 	del coverage.out.tmp
 
 linters:
