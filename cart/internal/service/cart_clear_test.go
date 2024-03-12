@@ -42,6 +42,7 @@ func TestCartService_DeleteItemsByUserId(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			mc := minimock.NewController(t)
 
 			f := fields{
