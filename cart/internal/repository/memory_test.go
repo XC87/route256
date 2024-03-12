@@ -28,9 +28,20 @@ func TestMemory_AddItem(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "Check success add",
+			name: "Check success add ",
 			args: args{
-				userId: 31337,
+				userId: 1,
+				sku: domain.Item{
+					Sku_id: 773297411,
+					Count:  3,
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Check success add ",
+			args: args{
+				userId: 2,
 				sku: domain.Item{
 					Sku_id: 773297411,
 					Count:  3,
@@ -39,9 +50,10 @@ func TestMemory_AddItem(t *testing.T) {
 			wantErr: nil,
 		},
 	}
+	memory := NewMemoryRepository()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			memory := NewMemoryRepository()
+			t.Parallel()
 			err := memory.AddItem(tt.args.userId, tt.args.sku)
 			require.ErrorIs(t, err, tt.wantErr)
 		})
@@ -61,7 +73,18 @@ func TestMemory_DeleteItem(t *testing.T) {
 		{
 			name: "Check success delete",
 			args: args{
-				userId: 31337,
+				userId: 1,
+				sku: domain.Item{
+					Sku_id: 773297411,
+					Count:  3,
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Check success delete",
+			args: args{
+				userId: 2,
 				sku: domain.Item{
 					Sku_id: 773297411,
 					Count:  3,
@@ -70,9 +93,10 @@ func TestMemory_DeleteItem(t *testing.T) {
 			wantErr: nil,
 		},
 	}
+	memory := NewMemoryRepository()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			memory := NewMemoryRepository()
+			t.Parallel()
 			err := memory.DeleteItem(tt.args.userId, tt.args.sku.Sku_id)
 			require.ErrorIs(t, err, tt.wantErr)
 		})
@@ -92,7 +116,18 @@ func TestMemory_DeleteItemsByUserId(t *testing.T) {
 		{
 			name: "Check success delete user cart",
 			args: args{
-				userId: 31337,
+				userId: 1,
+				sku: domain.Item{
+					Sku_id: 773297411,
+					Count:  3,
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Check success delete user cart",
+			args: args{
+				userId: 2,
 				sku: domain.Item{
 					Sku_id: 773297411,
 					Count:  3,
@@ -103,6 +138,7 @@ func TestMemory_DeleteItemsByUserId(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			memory := NewMemoryRepository()
 			err := memory.DeleteItemsByUserId(tt.args.userId)
 			require.ErrorIs(t, err, tt.wantErr)
@@ -123,7 +159,18 @@ func TestMemory_GetItemsByUserId(t *testing.T) {
 		{
 			name: "Check get user cart",
 			args: args{
-				userId: 31337,
+				userId: 1,
+				sku: domain.Item{
+					Sku_id: 773297411,
+					Count:  3,
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Check get user cart",
+			args: args{
+				userId: 2,
 				sku: domain.Item{
 					Sku_id: 773297411,
 					Count:  3,
@@ -132,9 +179,10 @@ func TestMemory_GetItemsByUserId(t *testing.T) {
 			wantErr: nil,
 		},
 	}
+	memory := NewMemoryRepository()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			memory := NewMemoryRepository()
+			t.Parallel()
 			_, err := memory.GetItemsByUserId(tt.args.userId)
 			require.ErrorIs(t, err, tt.wantErr)
 		})

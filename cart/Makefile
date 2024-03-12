@@ -10,7 +10,11 @@ cover:
 	go tool cover -html=coverage.out
 	del coverage.out.tmp
 
-linters:
+test:
+	go test -v -parallel 45 -race  ./internal/repository
+	go test -v -parallel 45 -race  ./internal/service
+
+lint:
 	@echo Running gocyclo linter...
 	-gocyclo -top 20 -over 5 -ignore "_test|_mock|testdata" .
 
