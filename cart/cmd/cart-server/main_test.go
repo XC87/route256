@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"testing"
@@ -27,7 +29,7 @@ func TestAPICases(t *testing.T) {
 			expectedBody:   []byte(`{}`),
 		},
 		{
-			name:           "Add service to cart",
+			name:           "Add product to cart",
 			method:         "POST",
 			url:            "http://localhost:8080/user/31337/cart/773297411",
 			body:           []byte(`{ "count": 10 }`),
@@ -43,7 +45,7 @@ func TestAPICases(t *testing.T) {
 			expectedBody:   []byte(`{"items":[{"sku_id":773297411,"name":"Кроссовки Nike JORDAN","count":10,"price":2202}],"total_price":22020}`),
 		},
 		{
-			name:           "Add another service to cart",
+			name:           "Add another product to cart",
 			method:         "POST",
 			url:            "http://localhost:8080/user/31337/cart/2958025",
 			body:           []byte(`{ "count": 1 }`),
@@ -81,25 +83,9 @@ func TestAPICases(t *testing.T) {
 			body:           []byte(``),
 			expectedStatus: http.StatusNoContent,
 			expectedBody:   []byte(``),
-		}, /*
-			{
-				name:           "check cart state, expect empty cart",
-				method:         "GET",
-				url:            "http://localhost:8080/user/31337/cart",
-				body:           []byte(``),
-				expectedStatus: http.StatusNotFound,
-				expectedBody:   []byte(``),
-			},
-			{
-				name:           "Clear cart",
-				method:         "DELETE",
-				url:            "http://localhost:8080/user/31337/cart",
-				body:           []byte(``),
-				expectedStatus: http.StatusNoContent,
-				expectedBody:   []byte(``),
-			},*/
+		},
 		{
-			name:           "Add unknown service, expect error",
+			name:           "Add unknown product, expect error",
 			method:         "POST",
 			url:            "http://localhost:8080/user/31337/cart/404",
 			body:           []byte(`{ "count": 1 }`),
@@ -107,29 +93,18 @@ func TestAPICases(t *testing.T) {
 			expectedBody:   []byte(``),
 		},
 	}
-	for _, tc := range testCases {
-
-		t.Run(tc.name, func(t *testing.T) {
-			req, err := http.NewRequest(tc.method, tc.url, bytes.NewBuffer(tc.body))
-			if err != nil {
-				t.Fatalf("error creating request: %v", err)
-			}
-
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest(tt.method, tt.url, bytes.NewBuffer(tt.body))
+			require.NoError(t, err, "error creating request")
 			client := &http.Client{}
 			resp, err := client.Do(req)
-			if err != nil {
-				t.Fatalf("error sending request: %v", err)
-			}
+			require.NoError(t, err, "error sending request")
 			defer resp.Body.Close()
 
 			body, _ := io.ReadAll(resp.Body)
-			if string(body) != string(tc.expectedBody) {
-				t.Errorf("unexpected body: want '%s', got '%s'", string(tc.expectedBody), string(body))
-			}
-
-			if resp.StatusCode != tc.expectedStatus {
-				t.Errorf("unexpected status code: want %d, got %d", tc.expectedStatus, resp.StatusCode)
-			}
+			assert.Equal(t, string(tt.expectedBody), string(body), "unexpected body")
+			assert.Equal(t, tt.expectedStatus, resp.StatusCode, "unexpected status code")
 		})
 	}
 }
