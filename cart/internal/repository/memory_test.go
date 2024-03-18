@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"route256.ozon.ru/project/cart/internal/domain"
 	"testing"
@@ -59,8 +60,10 @@ func TestMemory_AddItem(t *testing.T) {
 			err := memory.AddItem(userId, item)
 
 			require.ErrorIs(t, err, tt.wantErr)
-			if memory.cart[userId][item.Sku_id].Count != item.Count {
-				t.Errorf("Expected count to be %d, but got %d", item.Count, memory.cart[userId][item.Sku_id].Count)
+
+			items, _ := memory.GetItemsByUserId(userId)
+			if items[item.Sku_id].Count != item.Count {
+				t.Errorf("Expected count to be %d, but got %d", item.Count, items[item.Sku_id].Count)
 			}
 		})
 	}
@@ -122,9 +125,10 @@ func TestMemory_DeleteItem(t *testing.T) {
 			item := tt.args.sku
 
 			err := memory.DeleteItem(tt.args.userId, tt.args.sku.Sku_id)
-
 			require.ErrorIs(t, err, tt.wantErr)
-			if _, ok := memory.cart[userId][item.Sku_id]; ok {
+
+			items, _ := memory.GetItemsByUserId(userId)
+			if _, ok := items[item.Sku_id]; ok {
 				t.Errorf("Expected item to be deleted")
 			}
 		})
@@ -187,9 +191,8 @@ func TestMemory_DeleteItemsByUserId(t *testing.T) {
 			err := memory.DeleteItemsByUserId(tt.args.userId)
 			require.ErrorIs(t, err, tt.wantErr)
 
-			if _, ok := memory.cart[tt.args.userId]; ok {
-				t.Errorf("Expected user cart to be deleted")
-			}
+			items, _ := memory.GetItemsByUserId(tt.args.userId)
+			assert.Empty(t, items)
 		})
 	}
 }
