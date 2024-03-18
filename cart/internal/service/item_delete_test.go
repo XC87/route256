@@ -22,7 +22,7 @@ func TestCartService_DeleteItem(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "Successful deletion of an service from the cart",
+			name: "Successful deletion of an product from the cart",
 			prepare: func(f *fields, args args) {
 				f.repository.DeleteItemMock.Expect(args.userId, args.skuId).Return(nil)
 			},

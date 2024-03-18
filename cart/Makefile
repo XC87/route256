@@ -1,3 +1,5 @@
+LOCAL_BIN := $(CURDIR)/bin
+
 build:
 	go build -o bin/cart-server ./cmd/cart-server
 
@@ -5,7 +7,7 @@ run:
 	go run ./cmd/cart-server/main.go
 
 cover:
-	go test -v ./internal/service -covermode count -coverprofile=coverage.out.tmp
+	go test -v ./internal/service ./internal/repository -covermode count -coverprofile=coverage.out.tmp
 	grep -vE "_mock.go" coverage.out.tmp > coverage.out
 	go tool cover -html=coverage.out
 	del coverage.out.tmp
@@ -16,10 +18,12 @@ test:
 
 lint:
 	@echo Running gocyclo linter...
-	-gocyclo -top 20 -over 5 -ignore "_test|_mock|testdata" .
+	-$(LOCAL_BIN)/gocyclo -top 20 -over 5 -ignore "_test|_mock|testdata" .
 
 	@echo Running gocognit linter...
-	-gocognit -top 20 -over 5 -ignore "_test|_mock|testdata" .
+	-$(LOCAL_BIN)/gocognit -top 20 -over 5 -ignore "_test|_mock|testdata" .
 
-
+install:
+	set GOBIN=$(LOCAL_BIN) && set GOPROXY=direct && go install github.com/uudashr/gocognit/cmd/gocognit@latest
+	set GOBIN=$(LOCAL_BIN) && set GOPROXY=direct && go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
 
