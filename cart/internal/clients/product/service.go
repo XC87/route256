@@ -26,7 +26,6 @@ func (service *ProductService) WithTransport(transport Transport) {
 }
 
 func NewProductService(config *config.Config) *ProductService {
-	// тут конечно вопрос, выносить ли это в main?
 	client := &http.Client{
 		Timeout: config.ProductServiceTimeout,
 	}
