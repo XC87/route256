@@ -8,6 +8,6 @@ type CartResponse struct {
 type CartItem struct {
 	SkuId int64  `json:"sku_id" valid:"type(int)"`
 	Name  string `json:"name"`
-	Count uint16 `json:"count"`
+	Count uint64 `json:"count"`
 	Price uint32 `json:"price"`
 }

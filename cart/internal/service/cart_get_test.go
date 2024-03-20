@@ -4,15 +4,17 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"route256.ozon.ru/project/cart/internal/clients/product"
+	"route256.ozon.ru/project/cart/internal/clients/http/product"
 	"route256.ozon.ru/project/cart/internal/domain"
+	"route256.ozon.ru/project/cart/internal/service/mock"
 	"testing"
 )
 
 func TestCartService_GetItemsByUserId(t *testing.T) {
 	type fields struct {
-		productService *ProductServiceMock
-		repository     *RepositoryMock
+		productService *mock.ProductServiceMock
+		lomsService    *mock.LomsServiceMock
+		repository     *mock.RepositoryMock
 	}
 	type args struct {
 		userId int64
@@ -82,11 +84,12 @@ func TestCartService_GetItemsByUserId(t *testing.T) {
 			mc := minimock.NewController(t)
 
 			f := fields{
-				productService: NewProductServiceMock(mc),
-				repository:     NewRepositoryMock(mc),
+				productService: mock.NewProductServiceMock(mc),
+				lomsService:    mock.NewLomsServiceMock(mc),
+				repository:     mock.NewRepositoryMock(mc),
 			}
 
-			cartService := NewCartService(f.repository, f.productService)
+			cartService := NewCartService(f.repository, f.productService, f.lomsService)
 			tt.prepare(&f, tt.args, tt.want)
 			res, err := cartService.GetItemsByUserId(tt.args.userId)
 			assert.Equal(t, tt.want, res)
