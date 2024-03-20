@@ -8,3 +8,6 @@
 /.vscode
 coverage.html
 coverage.out
+.idea
+bin/*
+vendor-proto

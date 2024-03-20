@@ -1,10 +1,13 @@
 package service
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"route256.ozon.ru/project/cart/internal/clients/product"
+	"log"
+	"route256.ozon.ru/project/cart/internal/clients/grpc/loms"
+	"route256.ozon.ru/project/cart/internal/clients/http/product"
 	"route256.ozon.ru/project/cart/internal/config"
 	"route256.ozon.ru/project/cart/internal/domain"
 	"route256.ozon.ru/project/cart/internal/repository"
@@ -20,14 +23,20 @@ type Suit struct {
 
 func (s *Suit) SetupSuite() {
 	var err error
-	cartConfig, err := config.GetConfig()
+	ctx := context.Background()
+	cartConfig, err := config.GetConfig(ctx)
 	require.NoError(s.T(), err)
 	s.productService = product.NewProductService(cartConfig)
 	s.storage = repository.NewMemoryRepository()
 	memoryRepository := repository.NewMemoryRepository()
 	productService := product.NewProductService(cartConfig)
+	lomsService, err := loms.NewLomsGrpcClient(nil, cartConfig.LomsGrpcHost)
+	if err != nil {
+		log.Fatal("loms grpc client error: ", err)
+		return
+	}
 
-	s.cartService = service.NewCartService(memoryRepository, productService)
+	s.cartService = service.NewCartService(memoryRepository, productService, lomsService)
 }
 
 func (s *Suit) TestAdd() {

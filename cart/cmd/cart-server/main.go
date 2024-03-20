@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
-	"route256.ozon.ru/project/cart/internal/clients/product"
+	"route256.ozon.ru/project/cart/internal/clients/grpc/loms"
+	product "route256.ozon.ru/project/cart/internal/clients/http/product"
 	"route256.ozon.ru/project/cart/internal/config"
 	"route256.ozon.ru/project/cart/internal/handlers"
 	"route256.ozon.ru/project/cart/internal/repository"
@@ -11,7 +13,8 @@ import (
 )
 
 func main() {
-	cartConfig, err := config.GetConfig()
+	ctx := context.Background()
+	cartConfig, err := config.GetConfig(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,7 +27,13 @@ func main() {
 	})
 
 	memoryRepository := repository.NewMemoryRepository()
-	cartService := service.NewCartService(memoryRepository, productService)
+	lomsService, err := loms.NewLomsGrpcClient(ctx, cartConfig.LomsGrpcHost)
+	if err != nil {
+		log.Fatal("loms grpc client error: ", err)
+		return
+	}
+
+	cartService := service.NewCartService(memoryRepository, productService, lomsService)
 
 	cartHandler := handlers.NewCartHandler(cartService)
 	cartHandler.Register()
@@ -33,4 +42,5 @@ func main() {
 	if err = http.ListenAndServe(cartConfig.CartHost, nil); err != nil {
 		log.Fatal(err)
 	}
+	ctx.Done()
 }

@@ -1,4 +1,5 @@
-LOCAL_BIN := $(CURDIR)/bin
+include ../mk/vendor-proto.mk
+include ../mk/proto_compile.mk
 
 build:
 	go build -o bin/cart-server ./cmd/cart-server
@@ -23,7 +24,11 @@ lint:
 	@echo Running gocognit linter...
 	-$(LOCAL_BIN)/gocognit -top 20 -over 5 -ignore "_test|_mock|testdata" .
 
-install:
-	set GOBIN=$(LOCAL_BIN) && set GOPROXY=direct && go install github.com/uudashr/gocognit/cmd/gocognit@latest
-	set GOBIN=$(LOCAL_BIN) && set GOPROXY=direct && go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+PROTO_PATH:="api/v1"
+PROTO_FILE:="/loms.proto"
+# компиляция proto файлов
+protoc: .protoc-generate
+
+# Вендоринг внешних proto файлов
+vendor-proto: .vendor-rm  vendor-proto/google/protobuf vendor-proto/validate vendor-proto/google/api vendor-proto/protoc-gen-openapiv2/options
 

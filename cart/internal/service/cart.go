@@ -1,14 +1,21 @@
 package service
 
 import (
+	"context"
 	"errors"
-	"route256.ozon.ru/project/cart/internal/clients/product"
+	product2 "route256.ozon.ru/project/cart/internal/clients/http/product"
 	"route256.ozon.ru/project/cart/internal/domain"
 )
 
 type CartService struct {
-	productService ProductService
 	repository     Repository
+	productService ProductService
+	lomsService    LomsService
+}
+
+type LomsService interface {
+	GetStockInfo(ctx context.Context, sku uint32) (uint64, error)
+	CreateOrder(ctx context.Context, userId int64, items []domain.Item) (int64, error)
 }
 
 type Repository interface {
@@ -19,21 +26,28 @@ type Repository interface {
 }
 
 type ProductService interface {
-	GetProduct(sku int64) (*product.ProductGetProductResponse, error)
+	GetProduct(sku int64) (*product2.ProductGetProductResponse, error)
 }
 
 var (
-	ErrProductNotFound     = product.ErrProductNotFound
+	ErrProductNotFound     = product2.ErrProductNotFound
 	ErrProductCountInvalid = errors.New("item count invalid")
+	ErrStockInsufficient   = errors.New("insufficient stock")
 	ErrUserInvalid         = errors.New("user invalid")
+	ErrCartIsEmpty         = errors.New("cart is empty")
+	ErrCartCantClear       = errors.New("cant clear cart")
+	ErrCartCantGet         = errors.New("error fetching users cart")
+	ErrOrderCreate         = errors.New("cant create order")
 )
 
 func NewCartService(
 	repository Repository,
 	productService ProductService,
+	lomsService LomsService,
 ) *CartService {
 	return &CartService{
-		productService: productService,
 		repository:     repository,
+		productService: productService,
+		lomsService:    lomsService,
 	}
 }

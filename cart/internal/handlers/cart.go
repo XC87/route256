@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"route256.ozon.ru/project/cart/internal/domain"
+	"route256.ozon.ru/project/cart/internal/mw"
 	"route256.ozon.ru/project/cart/internal/service"
 )
 
@@ -15,6 +17,7 @@ const (
 	deleteFromCartURL = "DELETE /user/{user_id}/cart/{sku_id}"
 	deleteCartURL     = "DELETE /user/{user_id}/cart"
 	getCartURL        = "GET /user/{user_id}/cart"
+	orderCheckoutURL  = "POST /cart/checkout"
 )
 
 type CartService interface {
@@ -22,6 +25,7 @@ type CartService interface {
 	GetItemsByUserId(userId int64) (*service.CartResponse, error)
 	DeleteItem(userId int64, skuId int64) error
 	DeleteItemsByUserId(userId int64) error
+	OrderCheckout(ctx context.Context, userId int64) (int64, error)
 }
 
 type Handler struct {
@@ -35,10 +39,11 @@ func NewCartHandler(cartService CartService) *Handler {
 }
 
 func (h *Handler) Register() {
-	chain := []middlewareChain{loggingMiddleware}
+	chain := []mw.MiddlewareChain{mw.LoggingMiddleware}
 
-	http.Handle(addToCartURL, buildMiddleware(h.AddItem, chain))
-	http.Handle(deleteFromCartURL, buildMiddleware(h.DeleteItem, chain))
-	http.Handle(deleteCartURL, buildMiddleware(h.DeleteItemsByUserId, chain))
-	http.Handle(getCartURL, buildMiddleware(h.GetItemsByUserId, chain))
+	http.Handle(addToCartURL, mw.BuildMiddleware(h.AddItem, chain))
+	http.Handle(deleteFromCartURL, mw.BuildMiddleware(h.DeleteItem, chain))
+	http.Handle(deleteCartURL, mw.BuildMiddleware(h.DeleteItemsByUserId, chain))
+	http.Handle(getCartURL, mw.BuildMiddleware(h.GetItemsByUserId, chain))
+	http.Handle(orderCheckoutURL, mw.BuildMiddleware(h.OrderCheckout, chain))
 }
