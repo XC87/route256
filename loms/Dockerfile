@@ -15,7 +15,7 @@ RUN go build -o bin/loms-server ./cmd/loms-server
 FROM alpine
 
 COPY --from=builder /app/bin/loms-server /loms-server
-COPY --from=builder /app/bin/swagger /swagger
+#COPY --from=builder /app/bin/swagger /swagger
 COPY --from=builder /app/stock-data.json /stock-data.json
 COPY --from=builder /app/swagger-ui /swagger-ui
 COPY --from=builder /app/api/openapiv2/loms.swagger.json /api/openapiv2/loms.swagger.json
