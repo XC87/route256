@@ -20,6 +20,7 @@ func (s *Service) OrderCreate(ctx context.Context, order *model.Order) (int64, e
 		return 0, err
 	}
 
+	order.Id = orderId
 	if err = s.checkAndReserveStock(ctx, order); err != nil {
 		return 0, ErrOrderCantReserve
 	}

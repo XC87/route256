@@ -5,8 +5,9 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"net/http"
 	"route256.ozon.ru/project/loms/internal/config"
-	order_repository "route256.ozon.ru/project/loms/internal/repository/order"
-	stock_repository "route256.ozon.ru/project/loms/internal/repository/stock"
+	pgs "route256.ozon.ru/project/loms/internal/repository/pgs"
+	order_pgs_repository "route256.ozon.ru/project/loms/internal/repository/pgs/order"
+	stock_pgs_repository "route256.ozon.ru/project/loms/internal/repository/pgs/stock"
 	notes_usecase "route256.ozon.ru/project/loms/internal/service/loms"
 	"strings"
 
@@ -25,19 +26,27 @@ import (
 
 func main() {
 	ctx := context.Background()
-
 	lomsConfig, err := config.GetConfig(ctx)
 	if err != nil {
 		panic(err)
 	}
 
 	grpcServer := createGRPCServer()
-	controller := createLomsServer()
+	controller := createLomsServer(ctx, lomsConfig)
 
 	lomsDesc.RegisterLomsServer(grpcServer, controller)
 
 	startGRPCServer(grpcServer, lomsConfig.LomsGrpcPort)
 	startHttpServer(grpcServer, lomsConfig.LomsHttpPort, lomsConfig.LomsGrpcPort)
+}
+
+func connectToDB(ctx context.Context, config *config.Config) *pgs.DB {
+	dbPool, err := pgs.ConnectToPgsDb(ctx, config, false)
+	if err != nil {
+		log.Fatalln("Cannot initialize connection to postgres")
+	}
+
+	return dbPool
 }
 
 func createGRPCServer() *grpc.Server {
@@ -52,9 +61,10 @@ func createGRPCServer() *grpc.Server {
 	return grpcServer
 }
 
-func createLomsServer() *loms.Server {
-	orderRepository := order_repository.NewOrderMemoryRepository()
-	stockRepository := stock_repository.NewStockMemoryRepository()
+func createLomsServer(ctx context.Context, lomsConfig *config.Config) *loms.Server {
+	dbConnection := connectToDB(ctx, lomsConfig)
+	orderRepository := order_pgs_repository.NewOrderPgsRepository(dbConnection)
+	stockRepository := stock_pgs_repository.NewStocksPgRepository(dbConnection)
 	useCase := notes_usecase.NewService(orderRepository, stockRepository)
 	return loms.NewServer(useCase)
 }
@@ -89,7 +99,7 @@ func startHttpServer(grpcServer *grpc.Server, httpPort, grpcPort string) {
 	}
 
 	handler := grpcHandlerFunc(grpcServer, mux)
-	handler = mw.WithHTTPLoggingMiddleware(mw.WithHTTPCorsMiddleware(mux)) // todo chain
+	handler = mw.WithHTTPLoggingMiddleware(mw.WithHTTPCorsMiddleware(handler)) // todo chain
 	gwServer := &http.Server{
 		Addr:    httpPort,
 		Handler: handler,
