@@ -4,8 +4,7 @@ import (
 	"context"
 	"errors"
 	"route256.ozon.ru/project/loms/internal/model"
-	order_repository "route256.ozon.ru/project/loms/internal/repository/order"
-	stock_repository "route256.ozon.ru/project/loms/internal/repository/stock"
+	order_repository "route256.ozon.ru/project/loms/internal/repository/pgs/order"
 )
 
 type OrderRepository interface {
@@ -18,7 +17,7 @@ type OrderRepository interface {
 
 type StockRepository interface {
 	GetCountBySku(ctx context.Context, sku uint32) (uint64, error)
-	GetBySku(ctx context.Context, sku uint32) (stock_repository.Product, error)
+	GetBySku(ctx context.Context, sku uint32) (*model.ProductStock, error)
 	Reserve(ctx context.Context, items []model.Item) error
 	UnReserve(ctx context.Context, items []model.Item) error
 }

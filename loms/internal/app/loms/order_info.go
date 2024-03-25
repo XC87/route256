@@ -26,7 +26,7 @@ func repackOrderToProto(in *model.Order) *servicepb.OrderInfoResponse {
 	}
 	return &servicepb.OrderInfoResponse{
 		Id:     in.Id,
-		Status: mapStatus(in.Status),
+		Status: model.MapStatusToGrpc(in.Status),
 		User:   in.User,
 		Items:  orderItemInfoResponses,
 	}

@@ -23,6 +23,13 @@ lint:
 	@echo Running gocognit linter...
 	-$(LOCAL_BIN)gocognit -top 20 -over 5 -ignore "_test|_mock|testdata|.pb." .
 
+sqlc:
+	sqlc generate
+
+migrate-up:
+	goose -dir migrations postgres "postgresql://postgres:password@localhost:5442/loms?sslmode=disable" up
+migrate-reset:
+	goose -dir migrations postgres "postgresql://postgres:password@localhost:5442/loms?sslmode=disable" reset
 
 PROTO_PATH:="api/v1"
 PROTO_FILE:="/loms.proto"
