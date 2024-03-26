@@ -31,13 +31,18 @@ func main() {
 		panic(err)
 	}
 
+	dbConnection := connectToDB(ctx, lomsConfig)
+	defer dbConnection.Close()
+
 	grpcServer := createGRPCServer()
-	controller := createLomsServer(ctx, lomsConfig)
+	controller := createLomsServer(dbConnection)
 
 	lomsDesc.RegisterLomsServer(grpcServer, controller)
 
 	startGRPCServer(grpcServer, lomsConfig.LomsGrpcPort)
 	startHttpServer(grpcServer, lomsConfig.LomsHttpPort, lomsConfig.LomsGrpcPort)
+
+	dbConnection.Close()
 }
 
 func connectToDB(ctx context.Context, config *config.Config) *pgs.DB {
@@ -61,8 +66,7 @@ func createGRPCServer() *grpc.Server {
 	return grpcServer
 }
 
-func createLomsServer(ctx context.Context, lomsConfig *config.Config) *loms.Server {
-	dbConnection := connectToDB(ctx, lomsConfig)
+func createLomsServer(dbConnection *pgs.DB) *loms.Server {
 	orderRepository := order_pgs_repository.NewOrderPgsRepository(dbConnection)
 	stockRepository := stock_pgs_repository.NewStocksPgRepository(dbConnection)
 	useCase := notes_usecase.NewService(orderRepository, stockRepository)

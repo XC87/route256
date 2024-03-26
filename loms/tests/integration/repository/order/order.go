@@ -1,11 +1,12 @@
-package order_pgs_repository
+package order
 
 import (
 	"context"
+	"math/rand/v2"
 	"route256.ozon.ru/project/loms/internal/config"
 	"route256.ozon.ru/project/loms/internal/model"
 	pgs "route256.ozon.ru/project/loms/internal/repository/pgs"
-	"testing"
+	order_pgs_repository "route256.ozon.ru/project/loms/internal/repository/pgs/order"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -15,23 +16,19 @@ import (
 
 type OrderPgRepositoryTestSuite struct {
 	suite.Suite
-	repo   *OrderPgsRepository
+	repo   *order_pgs_repository.OrderPgsRepository
 	dbPool *pgs.DB
 	ctx    context.Context
 }
 
-func TestOrderPgRepositoryTestSuite(t *testing.T) {
-	suite.Run(t, new(OrderPgRepositoryTestSuite))
-}
-
-func (t *OrderPgRepositoryTestSuite) TestRepository() {
+func (t *OrderPgRepositoryTestSuite) TestFullCycle() {
 	order := &model.Order{
 		CreatedAt: time.Now(),
 		Items: []model.Item{{
-			SKU:   77329741,
-			Count: 123,
+			SKU:   1234567891,
+			Count: 1,
 		}},
-		User:   1,
+		User:   rand.Int64(),
 		Status: model.New,
 	}
 
@@ -45,11 +42,11 @@ func (t *OrderPgRepositoryTestSuite) TestRepository() {
 	assert.NoError(t.T(), err)
 	assert.Equal(t.T(), model.Cancelled, dbOrder.Status)
 
-	_, err = t.repo.dbPool.Exec(t.ctx, "DELETE FROM orders WHERE id = $1", id)
+	_, err = t.repo.DbPool.Exec(t.ctx, "DELETE FROM orders WHERE id = $1", id)
 	require.NoError(t.T(), err)
 
 	_, err = t.repo.OrderInfo(t.ctx, id)
-	assert.ErrorIs(t.T(), err, ErrOrderNotFound)
+	assert.ErrorIs(t.T(), err, order_pgs_repository.ErrOrderNotFound)
 }
 
 func (t *OrderPgRepositoryTestSuite) SetupSuite() {
@@ -57,10 +54,10 @@ func (t *OrderPgRepositoryTestSuite) SetupSuite() {
 	lomsConfig, err := config.GetConfig(ctx)
 	require.NoError(t.T(), err)
 
-	dbPool, err := pgs.ConnectToPgsDb(ctx, lomsConfig, false)
+	dbPool, err := pgs.ConnectToPgsDb(ctx, lomsConfig, true)
 	require.NoError(t.T(), err)
 
-	repo := NewOrderPgsRepository(dbPool)
+	repo := order_pgs_repository.NewOrderPgsRepository(dbPool)
 	require.NoError(t.T(), err)
 
 	t.repo = repo
