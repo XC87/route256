@@ -12,7 +12,6 @@ import (
 
 	"github.com/gojuno/minimock/v3"
 	"route256.ozon.ru/project/loms/internal/model"
-	stock_repository "route256.ozon.ru/project/loms/internal/repository/stock"
 )
 
 // StockRepositoryMock implements order_usecase.StockRepository
@@ -20,7 +19,7 @@ type StockRepositoryMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
-	funcGetBySku          func(ctx context.Context, sku uint32) (p1 stock_repository.Product, err error)
+	funcGetBySku          func(ctx context.Context, sku uint32) (pp1 *model.ProductStock, err error)
 	inspectFuncGetBySku   func(ctx context.Context, sku uint32)
 	afterGetBySkuCounter  uint64
 	beforeGetBySkuCounter uint64
@@ -95,7 +94,7 @@ type StockRepositoryMockGetBySkuParams struct {
 
 // StockRepositoryMockGetBySkuResults contains results of the StockRepository.GetBySku
 type StockRepositoryMockGetBySkuResults struct {
-	p1  stock_repository.Product
+	pp1 *model.ProductStock
 	err error
 }
 
@@ -131,7 +130,7 @@ func (mmGetBySku *mStockRepositoryMockGetBySku) Inspect(f func(ctx context.Conte
 }
 
 // Return sets up results that will be returned by StockRepository.GetBySku
-func (mmGetBySku *mStockRepositoryMockGetBySku) Return(p1 stock_repository.Product, err error) *StockRepositoryMock {
+func (mmGetBySku *mStockRepositoryMockGetBySku) Return(pp1 *model.ProductStock, err error) *StockRepositoryMock {
 	if mmGetBySku.mock.funcGetBySku != nil {
 		mmGetBySku.mock.t.Fatalf("StockRepositoryMock.GetBySku mock is already set by Set")
 	}
@@ -139,12 +138,12 @@ func (mmGetBySku *mStockRepositoryMockGetBySku) Return(p1 stock_repository.Produ
 	if mmGetBySku.defaultExpectation == nil {
 		mmGetBySku.defaultExpectation = &StockRepositoryMockGetBySkuExpectation{mock: mmGetBySku.mock}
 	}
-	mmGetBySku.defaultExpectation.results = &StockRepositoryMockGetBySkuResults{p1, err}
+	mmGetBySku.defaultExpectation.results = &StockRepositoryMockGetBySkuResults{pp1, err}
 	return mmGetBySku.mock
 }
 
 // Set uses given function f to mock the StockRepository.GetBySku method
-func (mmGetBySku *mStockRepositoryMockGetBySku) Set(f func(ctx context.Context, sku uint32) (p1 stock_repository.Product, err error)) *StockRepositoryMock {
+func (mmGetBySku *mStockRepositoryMockGetBySku) Set(f func(ctx context.Context, sku uint32) (pp1 *model.ProductStock, err error)) *StockRepositoryMock {
 	if mmGetBySku.defaultExpectation != nil {
 		mmGetBySku.mock.t.Fatalf("Default expectation is already set for the StockRepository.GetBySku method")
 	}
@@ -173,13 +172,13 @@ func (mmGetBySku *mStockRepositoryMockGetBySku) When(ctx context.Context, sku ui
 }
 
 // Then sets up StockRepository.GetBySku return parameters for the expectation previously defined by the When method
-func (e *StockRepositoryMockGetBySkuExpectation) Then(p1 stock_repository.Product, err error) *StockRepositoryMock {
-	e.results = &StockRepositoryMockGetBySkuResults{p1, err}
+func (e *StockRepositoryMockGetBySkuExpectation) Then(pp1 *model.ProductStock, err error) *StockRepositoryMock {
+	e.results = &StockRepositoryMockGetBySkuResults{pp1, err}
 	return e.mock
 }
 
 // GetBySku implements order_usecase.StockRepository
-func (mmGetBySku *StockRepositoryMock) GetBySku(ctx context.Context, sku uint32) (p1 stock_repository.Product, err error) {
+func (mmGetBySku *StockRepositoryMock) GetBySku(ctx context.Context, sku uint32) (pp1 *model.ProductStock, err error) {
 	mm_atomic.AddUint64(&mmGetBySku.beforeGetBySkuCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetBySku.afterGetBySkuCounter, 1)
 
@@ -197,7 +196,7 @@ func (mmGetBySku *StockRepositoryMock) GetBySku(ctx context.Context, sku uint32)
 	for _, e := range mmGetBySku.GetBySkuMock.expectations {
 		if minimock.Equal(*e.params, mm_params) {
 			mm_atomic.AddUint64(&e.Counter, 1)
-			return e.results.p1, e.results.err
+			return e.results.pp1, e.results.err
 		}
 	}
 
@@ -213,7 +212,7 @@ func (mmGetBySku *StockRepositoryMock) GetBySku(ctx context.Context, sku uint32)
 		if mm_results == nil {
 			mmGetBySku.t.Fatal("No results are set for the StockRepositoryMock.GetBySku")
 		}
-		return (*mm_results).p1, (*mm_results).err
+		return (*mm_results).pp1, (*mm_results).err
 	}
 	if mmGetBySku.funcGetBySku != nil {
 		return mmGetBySku.funcGetBySku(ctx, sku)

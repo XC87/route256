@@ -14,19 +14,19 @@ import (
 )
 
 type StocksPgRepository struct {
-	dbPool *pgs.DB
+	DbPool *pgs.DB
 }
 
 var ErrInsufficientStocks = errors.New("insufficient stocks")
 
 func NewStocksPgRepository(dbPool *pgs.DB) *StocksPgRepository {
 	return &StocksPgRepository{
-		dbPool: dbPool,
+		DbPool: dbPool,
 	}
 }
 
 func (repo *StocksPgRepository) Reserve(ctx context.Context, items []model.Item) error {
-	tx, err := repo.dbPool.Begin(ctx)
+	tx, err := repo.DbPool.Begin(ctx)
 	if err != nil {
 		log.Err(err).Msg("cannot begin transaction for reserving stocks")
 		return fmt.Errorf("cannot begin transaction for reserving stocks: %w", err)
@@ -78,7 +78,7 @@ func (repo *StocksPgRepository) UnReserve(ctx context.Context, items []model.Ite
 }
 
 func (repo *StocksPgRepository) GetCountBySku(ctx context.Context, sku uint32) (uint64, error) {
-	q := repo.dbPool.GetSelectQueries(ctx)
+	q := repo.DbPool.GetSelectQueries(ctx)
 	stockInfo, err := q.GetBySku(ctx, int64(sku))
 	if err != nil {
 		return 0, err
@@ -88,7 +88,7 @@ func (repo *StocksPgRepository) GetCountBySku(ctx context.Context, sku uint32) (
 }
 
 func (repo *StocksPgRepository) GetBySku(ctx context.Context, sku uint32) (*model.ProductStock, error) {
-	q := repo.dbPool.GetSelectQueries(ctx)
+	q := repo.DbPool.GetSelectQueries(ctx)
 	stockInfo, err := q.GetBySku(ctx, int64(sku))
 	if err != nil {
 		return nil, err

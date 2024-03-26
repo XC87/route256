@@ -15,6 +15,8 @@ cover:
 
 test:
 	go test -v -parallel 45 -race  ./internal/service/loms
+test_intergration:
+	go test -v -parallel 45 -race  ./tests/main_integration_test.go
 
 lint:
 	@echo Running gocyclo linter...

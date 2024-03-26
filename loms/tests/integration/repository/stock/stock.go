@@ -1,36 +1,31 @@
-package stock_pgs_repository
+package stock
 
 import (
 	"context"
-	"route256.ozon.ru/project/loms/internal/config"
-	"route256.ozon.ru/project/loms/internal/model"
-	pgs "route256.ozon.ru/project/loms/internal/repository/pgs"
-	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"route256.ozon.ru/project/loms/internal/config"
+	"route256.ozon.ru/project/loms/internal/model"
+	pgs "route256.ozon.ru/project/loms/internal/repository/pgs"
+	stock_pgs_repository "route256.ozon.ru/project/loms/internal/repository/pgs/stock"
 )
 
 type StockPgRepositoryTestSuite struct {
 	suite.Suite
-	repo   *StocksPgRepository
-	dbPool *pgs.DB
+	repo   *stock_pgs_repository.StocksPgRepository
+	DbPool *pgs.DB
 	ctx    context.Context
 }
 
-func TestStockPgRepositoryTestSuite(t *testing.T) {
-	suite.Run(t, new(StockPgRepositoryTestSuite))
-}
-
 func (t *StockPgRepositoryTestSuite) TestRepository() {
-	sku := uint32(12345678)
+	sku := uint32(1234567891)
 	orderItem := []model.Item{{
 		SKU:   sku,
 		Count: 1,
 	}}
+	defer func() { t.clearStocks(t.ctx, sku) }()
 
-	t.clearStocks(t.ctx, sku)
 	var initialStockCount uint64 = 10
 
 	t.prepareStocksForSku(t.ctx, sku, initialStockCount, 0)
@@ -54,16 +49,16 @@ func (t *StockPgRepositoryTestSuite) TestRepository() {
 	assert.Equal(t.T(), initialStockCount, count)
 
 	err = t.repo.UnReserve(t.ctx, orderItem)
-	assert.ErrorIs(t.T(), err, ErrInsufficientStocks)
+	assert.ErrorIs(t.T(), err, stock_pgs_repository.ErrInsufficientStocks)
 }
 
 func (t *StockPgRepositoryTestSuite) clearStocks(ctx context.Context, sku uint32) {
-	_, err := t.repo.dbPool.Exec(ctx, "DELETE FROM stocks WHERE sku = $1", sku)
+	_, err := t.repo.DbPool.Exec(ctx, "DELETE FROM stocks WHERE sku = $1", sku)
 	require.NoError(t.T(), err)
 }
 
 func (t *StockPgRepositoryTestSuite) prepareStocksForSku(ctx context.Context, sku uint32, count uint64, reserved uint64) {
-	_, err := t.repo.dbPool.Exec(ctx, "INSERT INTO stocks (sku, count, reserved) VALUES ($1, $2, $3)", sku, count, reserved)
+	_, err := t.repo.DbPool.Exec(ctx, "INSERT INTO stocks (sku, count, reserved) VALUES ($1, $2, $3)", sku, count, reserved)
 	require.NoError(t.T(), err)
 }
 
@@ -75,14 +70,14 @@ func (t *StockPgRepositoryTestSuite) SetupSuite() {
 	dbPool, err := pgs.ConnectToPgsDb(ctx, lomsConfig, true)
 	require.NoError(t.T(), err)
 
-	repo := NewStocksPgRepository(dbPool)
+	repo := stock_pgs_repository.NewStocksPgRepository(dbPool)
 	require.NoError(t.T(), err)
 
 	t.repo = repo
-	t.dbPool = dbPool
+	t.DbPool = dbPool
 	t.ctx = ctx
 }
 
 func (t *StockPgRepositoryTestSuite) TearDownSuite() {
-	t.dbPool.Close()
+	t.DbPool.Close()
 }
