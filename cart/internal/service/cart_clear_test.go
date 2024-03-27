@@ -3,13 +3,15 @@ package service
 import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
+	"route256.ozon.ru/project/cart/internal/service/mock"
 	"testing"
 )
 
 func TestCartService_DeleteItemsByUserId(t *testing.T) {
 	type fields struct {
-		productService *ProductServiceMock
-		repository     *RepositoryMock
+		repository     *mock.RepositoryMock
+		productService *mock.ProductServiceMock
+		lomsService    *mock.LomsServiceMock
 	}
 	type args struct {
 		userId int64
@@ -46,11 +48,12 @@ func TestCartService_DeleteItemsByUserId(t *testing.T) {
 			mc := minimock.NewController(t)
 
 			f := fields{
-				productService: NewProductServiceMock(mc),
-				repository:     NewRepositoryMock(mc),
+				productService: mock.NewProductServiceMock(mc),
+				lomsService:    mock.NewLomsServiceMock(mc),
+				repository:     mock.NewRepositoryMock(mc),
 			}
 
-			cartService := NewCartService(f.repository, f.productService)
+			cartService := NewCartService(f.repository, f.productService, f.lomsService)
 			tt.prepare(&f, tt.args)
 			err := cartService.DeleteItemsByUserId(tt.args.userId)
 			require.ErrorIs(t, err, tt.wantErr)

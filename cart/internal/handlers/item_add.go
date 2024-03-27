@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/asaskevich/govalidator"
-	"io"
 	"net/http"
 	"route256.ozon.ru/project/cart/internal/domain"
 	"route256.ozon.ru/project/cart/internal/service"
@@ -16,36 +15,32 @@ func (h *Handler) AddItem(w http.ResponseWriter, r *http.Request) {
 	skuId, _ := strconv.ParseInt(r.PathValue(skuIdPath), 10, 64)
 
 	itemAdd := ItemAddRequest{UserId: userId, SkuId: skuId}
-	data, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "please try again later", http.StatusInternalServerError)
-		return
-	}
-
-	if err = json.Unmarshal(data, &itemAdd); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&itemAdd); err != nil {
 		http.Error(w, "bad request arguments", http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
 
-	if _, err = govalidator.ValidateStruct(itemAdd); err != nil {
+	if _, err := govalidator.ValidateStruct(itemAdd); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = h.cartService.AddItem(itemAdd.UserId, domain.Item{
+	w.Header().Set("Content-Type", "application/json")
+	if err := h.cartService.AddItem(itemAdd.UserId, domain.Item{
 		Sku_id: itemAdd.SkuId,
 		Count:  itemAdd.Count,
-	})
-	if errors.Is(err, service.ErrProductNotFound) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if err != nil {
-		http.Error(w, "can't add to cart", http.StatusInternalServerError)
+	}); err != nil {
+		switch {
+		case errors.Is(err, service.ErrProductNotFound):
+			w.WriteHeader(http.StatusBadRequest)
+		case errors.Is(err, service.ErrStockInsufficient):
+			w.WriteHeader(http.StatusPreconditionFailed)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 }

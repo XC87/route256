@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package loms;
+
+option go_package="route256/loms/internal/app/grpc/pb";
+
+import "google/protobuf/empty.proto";
+import "validate/validate.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+// See more: https://github.com/grpc-ecosystem/grpc-gateway/blob/main/examples/internal/proto/examplepb/a_bit_of_everything.proto
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Loms";
+    version: "1.0.0";
+  };
+  schemes: HTTP;
+  schemes: HTTPS;
+  host: "localhost:8081/"
+  consumes: "application/json";
+  produces: "application/json";
+};
+
+service Loms {
+  rpc OrderCreate(OrderCreateRequest) returns (OrderCreateResponse) {
+    option (google.api.http) = {
+      post: "/order/create"
+      body: "*"
+    };
+  };
+  rpc OrderInfo(OrderInfoRequest) returns (OrderInfoResponse) {
+    option (google.api.http) = {
+      post: "/order/info"
+      body: "*"
+    };
+  };
+  rpc OrderPay(OrderPayRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/order/pay"
+      body: "*"
+    };
+  };
+  rpc OrderCancel(OrderCancelRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/order/cancel"
+      body: "*"
+    };
+  };
+  rpc StockInfo(StockInfoRequest) returns (StockInfoResponse) {
+    option (google.api.http) = {
+      post: "/stock/info"
+      body: "*"
+    };
+  };
+}
+
+message OrderCreateRequest {
+  int64 user = 1 [(validate.rules).int64.gt = 0];
+  repeated OrderItemCreateRequest items = 2;
+}
+
+message OrderItemCreateRequest {
+  uint32 sku = 1 [(validate.rules).uint32.gt = 0];
+  uint64 count = 2 [(validate.rules).uint64.gt = 0];
+}
+
+message OrderCreateResponse {
+  int64 orderId = 1;
+}
+
+message OrderInfoRequest {
+  int64 orderId = 1 [(validate.rules).int64.gt = 0];
+}
+
+message OrderInfoResponse {
+  int64 id = 1;
+  enum StatusEnum {
+    unspecified = 0;
+    new = 1;
+    awaiting_payment = 2;
+    failed = 3;
+    paid = 4;
+    cancelled = 5;
+  }
+  StatusEnum status = 2;
+  int64 user = 3;
+  repeated OrderItemInfoResponse items = 4;
+
+}
+
+message OrderItemInfoResponse {
+  uint32 sku = 1;
+  uint64 count = 2;
+}
+
+message OrderPayRequest {
+  int64 orderId = 1 [(validate.rules).int64.gt = 0];
+}
+
+message OrderCancelRequest {
+  int64 orderId = 1 [(validate.rules).int64.gt = 0];
+}
+
+message StockInfoRequest {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {example: "{\"sku\": 773297411}"};
+  uint32 sku = 1 [(validate.rules).uint32.gt = 0];
+}
+
+message StockInfoResponse {
+  uint64 count = 1;
+}
