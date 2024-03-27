@@ -3,7 +3,6 @@ package config
 import (
 	"context"
 	"github.com/sethvargo/go-envconfig"
-	"log"
 )
 
 type Config struct {
@@ -18,11 +17,11 @@ type Config struct {
 	LomsDbSlaveHost string `env:"POSTGRES_DB_SLAVE_HOST, default=localhost:5433"`
 }
 
-func GetConfig(ctx context.Context) *Config {
+func GetConfig(ctx context.Context) (*Config, error) {
 	var config Config
 	if err := envconfig.Process(ctx, &config); err != nil {
-		log.Fatalf("GetConfig: %s", err)
+		return nil, err
 	}
 
-	return &config
+	return &config, nil
 }

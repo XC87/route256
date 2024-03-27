@@ -14,15 +14,18 @@ import (
 	"route256.ozon.ru/project/loms/internal/config"
 	"route256.ozon.ru/project/loms/internal/mw"
 	pgs "route256.ozon.ru/project/loms/internal/repository/pgs"
-	order_repository "route256.ozon.ru/project/loms/internal/repository/order"
-	stock_repository "route256.ozon.ru/project/loms/internal/repository/stock"
+	order_pgs_repository "route256.ozon.ru/project/loms/internal/repository/pgs/order"
+	stock_pgs_repository "route256.ozon.ru/project/loms/internal/repository/pgs/stock"
 	notes_usecase "route256.ozon.ru/project/loms/internal/service/loms"
 	lomsDesc "route256.ozon.ru/project/loms/pkg/api/v1"
 )
 
 func main() {
 	ctx := context.Background()
-	lomsConfig := config.GetConfig(ctx)
+	lomsConfig, err := config.GetConfig(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	dbConnection := connectToDB(ctx, lomsConfig)
 	defer dbConnection.Close()
