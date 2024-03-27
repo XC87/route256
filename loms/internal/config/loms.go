@@ -3,7 +3,6 @@ package config
 import (
 	"context"
 	"github.com/sethvargo/go-envconfig"
-	"log"
 )
 
 type Config struct {
@@ -22,11 +21,11 @@ type Config struct {
 	TracerUrl                 string   `env:"TRACER_URL, default=http://localhost:14268/api/traces"`
 }
 
-func GetConfig(ctx context.Context) *Config {
+func GetConfig(ctx context.Context) (*Config, error) {
 	var config Config
 	if err := envconfig.Process(ctx, &config); err != nil {
-		log.Fatalf("GetConfig: %s", err)
+		return nil, err
 	}
 
-	return &config
+	return &config, nil
 }
