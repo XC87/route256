@@ -58,6 +58,22 @@ func TestCartService_AddItem(t *testing.T) {
 		},
 
 		{
+			name: "Check not enough error",
+			prepare: func(f *fields, args args) {
+				f.lomsService.GetStockInfoMock.Expect(ctx, uint32(args.sku.Sku_id)).Return(5, nil)
+				f.productService.GetProductMock.Expect(args.sku.Sku_id).Return(&product2.ProductGetProductResponse{}, nil)
+			},
+			args: args{
+				userId: 31337,
+				sku: domain.Item{
+					Sku_id: 773297411,
+					Count:  1000,
+				},
+			},
+			wantErr: ErrStockInsufficient,
+		},
+
+		{
 			name:    "Adding an service to the cart with an invalid user ID",
 			prepare: func(f *fields, args args) {},
 			args: args{

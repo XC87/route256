@@ -2,6 +2,7 @@ package loms
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
@@ -12,7 +13,6 @@ import (
 
 type lomsGrpcClient struct {
 	grpcClient servicepb.LomsClient
-	Conn       *grpc.ClientConn
 }
 
 func NewLomsGrpcClient(ctx context.Context, serviceHost string) (service.LomsService, error) {
@@ -38,7 +38,6 @@ func NewLomsGrpcClient(ctx context.Context, serviceHost string) (service.LomsSer
 
 	return &lomsGrpcClient{
 		grpcClient: grpcClient,
-		Conn:       conn,
 	}, nil
 }
 
@@ -58,7 +57,7 @@ func (l *lomsGrpcClient) CreateOrder(ctx context.Context, userId int64, items []
 	//ctx = metadata.AppendToOutgoingContext(ctx, "x-auth", "123")
 	response, err := l.grpcClient.OrderCreate(ctx, request)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "loms.OrderCreate")
 	}
 
 	return response.OrderId, nil
@@ -69,7 +68,7 @@ func (l *lomsGrpcClient) GetStockInfo(ctx context.Context, sku uint32) (uint64, 
 	//ctx = metadata.AppendToOutgoingContext(ctx, "x-auth", "123")
 	response, err := l.grpcClient.StockInfo(ctx, request)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "loms.GetStockInfo")
 	}
 
 	return response.Count, nil

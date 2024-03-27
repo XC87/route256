@@ -42,5 +42,4 @@ func main() {
 	if err = http.ListenAndServe(cartConfig.CartHost, nil); err != nil {
 		log.Fatal(err)
 	}
-	ctx.Done()
 }

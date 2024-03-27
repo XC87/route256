@@ -9,6 +9,7 @@
       "name": "Loms"
     }
   ],
+  "host": "localhost:8081/",
   "schemes": [
     "http",
     "https"
@@ -187,13 +188,14 @@
     "OrderInfoResponseStatusEnum": {
       "type": "string",
       "enum": [
+        "unspecified",
         "new",
         "awaiting_payment",
         "failed",
         "paid",
         "cancelled"
       ],
-      "default": "new"
+      "default": "unspecified"
     },
     "lomsOrderCancelRequest": {
       "type": "object",
