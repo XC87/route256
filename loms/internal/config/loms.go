@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"github.com/sethvargo/go-envconfig"
+	"log"
 )
 
 type Config struct {
@@ -10,11 +11,11 @@ type Config struct {
 	LomsHttpPort string `env:"LOMS_HTTP_PORT, default=:8081"`
 }
 
-func GetConfig(ctx context.Context) (*Config, error) {
+func GetConfig(ctx context.Context) *Config {
 	var config Config
 	if err := envconfig.Process(ctx, &config); err != nil {
-		return nil, err
+		log.Fatalf("GetConfig: %s", err)
 	}
 
-	return &config, nil
+	return &config
 }

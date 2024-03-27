@@ -35,6 +35,8 @@ func (mr *OrderMemoryRepository) OrderCreate(ctx context.Context, order *model.O
 }
 
 func (mr *OrderMemoryRepository) OrderUpdate(ctx context.Context, order *model.Order) error {
+	mr.mu.Lock()
+	defer mr.mu.Unlock()
 	mr.orders[order.Id] = order
 	return nil
 }
@@ -59,8 +61,8 @@ func (mr *OrderMemoryRepository) OrderPay(ctx context.Context, id int64) error {
 }
 
 func (mr *OrderMemoryRepository) OrderCancel(ctx context.Context, id int64) error {
-	mr.mu.RLock()
-	defer mr.mu.RUnlock()
+	mr.mu.Lock()
+	defer mr.mu.Unlock()
 
 	mr.orders[id].Status = model.Cancelled
 	return nil

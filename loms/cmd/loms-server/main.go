@@ -2,34 +2,26 @@ package main
 
 import (
 	"context"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"log"
+	"net"
 	"net/http"
+	"strings"
+
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+	"route256.ozon.ru/project/loms/internal/app/loms"
 	"route256.ozon.ru/project/loms/internal/config"
+	"route256.ozon.ru/project/loms/internal/mw"
 	order_repository "route256.ozon.ru/project/loms/internal/repository/order"
 	stock_repository "route256.ozon.ru/project/loms/internal/repository/stock"
 	notes_usecase "route256.ozon.ru/project/loms/internal/service/loms"
-	"strings"
-
-	"google.golang.org/grpc/credentials/insecure"
-
-	"google.golang.org/grpc/reflection"
-	"route256.ozon.ru/project/loms/internal/app/loms"
-	"route256.ozon.ru/project/loms/internal/mw"
 	lomsDesc "route256.ozon.ru/project/loms/pkg/api/v1"
-
-	"log"
-	"net"
-
-	"google.golang.org/grpc"
 )
 
 func main() {
 	ctx := context.Background()
-
-	lomsConfig, err := config.GetConfig(ctx)
-	if err != nil {
-		panic(err)
-	}
+	lomsConfig := config.GetConfig(ctx)
 
 	grpcServer := createGRPCServer()
 	controller := createLomsServer()
@@ -37,7 +29,7 @@ func main() {
 	lomsDesc.RegisterLomsServer(grpcServer, controller)
 
 	startGRPCServer(grpcServer, lomsConfig.LomsGrpcPort)
-	startHttpServer(grpcServer, lomsConfig.LomsHttpPort, lomsConfig.LomsGrpcPort)
+	startHttpServer(grpcServer, controller, lomsConfig.LomsHttpPort)
 }
 
 func createGRPCServer() *grpc.Server {
@@ -72,19 +64,14 @@ func startGRPCServer(grpcServer *grpc.Server, port string) {
 	}()
 }
 
-func startHttpServer(grpcServer *grpc.Server, httpPort, grpcPort string) {
-	conn, err := grpc.Dial(grpcPort, grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("failed to dial: %v", err)
-	}
-
+func startHttpServer(grpcServer *grpc.Server, controller *loms.Server, httpPort string) {
 	mux := http.NewServeMux()
-	gwmux := runtime.NewServeMux()
+	gwMux := runtime.NewServeMux()
 
-	mux.Handle("/", gwmux)
+	mux.Handle("/", gwMux)
 	serveSwagger(mux)
 
-	if err = lomsDesc.RegisterLomsHandler(context.Background(), gwmux, conn); err != nil {
+	if err := lomsDesc.RegisterLomsHandlerServer(context.Background(), gwMux, controller); err != nil {
 		log.Fatalf("failed to register gateway: %v", err)
 	}
 

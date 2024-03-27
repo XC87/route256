@@ -23,7 +23,6 @@ lint:
 	@echo Running gocognit linter...
 	-$(LOCAL_BIN)gocognit -top 20 -over 5 -ignore "_test|_mock|testdata|.pb." .
 
-
 PROTO_PATH:="api/v1"
 PROTO_FILE:="/loms.proto"
 SWAGGER_PATH:="--openapiv2_out=api/openapiv2"

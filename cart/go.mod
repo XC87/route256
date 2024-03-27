@@ -7,6 +7,7 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v1.0.4
 	github.com/gojuno/minimock/v3 v3.3.6
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1
+	github.com/pkg/errors v0.9.1
 	github.com/sethvargo/go-envconfig v1.0.0
 	github.com/stretchr/testify v1.9.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240318140521-94a12d6c2237

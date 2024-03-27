@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package loms;
 
-option go_package="internal/app/grpc/pb";
+option go_package="route256/loms/internal/app/grpc/pb";
 
 import "google/protobuf/empty.proto";
 import "validate/validate.proto";
@@ -76,11 +76,12 @@ message OrderInfoRequest {
 message OrderInfoResponse {
   int64 id = 1;
   enum StatusEnum {
-    new = 0;
-    awaiting_payment = 1;
-    failed = 2;
-    paid = 3;
-    cancelled = 4;
+    unspecified = 0;
+    new = 1;
+    awaiting_payment = 2;
+    failed = 3;
+    paid = 4;
+    cancelled = 5;
   }
   StatusEnum status = 2;
   int64 user = 3;
