@@ -25,7 +25,7 @@ services:
         condition: service_healthy
 
   loms-db:
-    image: 'docker.io/bitnami/postgresql:11-debian-10'
+    image: docker.io/bitnami/postgresql:16
     container_name: loms-db
     environment:
       POSTGRESQL_USERNAME: ${POSTGRES_USER}
@@ -46,7 +46,7 @@ services:
       timeout: 5s
       retries: 5
   loms-db-slave:
-    image: 'docker.io/bitnami/postgresql:11-debian-10'
+    image: docker.io/bitnami/postgresql:16
     container_name: loms-db-slave
     ports:
       - '5433:5432'
