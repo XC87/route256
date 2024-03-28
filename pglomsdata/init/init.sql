@@ -1,3 +1,4 @@
+CREATE DATABASE loms;
 CREATE USER repl_user WITH PASSWORD 'repl_password';
 GRANT CONNECT ON DATABASE loms TO repl_user;
 \connect loms
