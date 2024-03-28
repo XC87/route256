@@ -23,4 +23,4 @@ COPY --from=builder /app/stock-data.json /stock-data.json
 COPY --from=builder /app/swagger-ui /swagger-ui
 COPY --from=builder /app/api/openapiv2/loms.swagger.json /api/openapiv2/loms.swagger.json
 
-ENTRYPOINT ["/start.sh" ]
+ENTRYPOINT ["sh", "./start.sh" ]
