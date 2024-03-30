@@ -13,6 +13,7 @@ services:
       - "8091:8081"
       - "8095:8085"
     environment:
+      LOMS_GRPC_HOST: loms:50051
       POSTGRES_DB_HOST: loms-db
       POSTGRES_DB_SLAVE_HOST: loms-db-slave
       POSTGRES_DB: ${POSTGRES_DB}

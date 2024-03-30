@@ -37,7 +37,6 @@ func main() {
 
 	startGRPCServer(grpcServer, lomsConfig.LomsGrpcPort)
 	startHttpServer(grpcServer, controller, lomsConfig.LomsHttpPort)
-	dbConnection.Close()
 }
 
 func connectToDB(ctx context.Context, config *config.Config) *pgs.DB {
