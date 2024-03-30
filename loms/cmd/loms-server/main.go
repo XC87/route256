@@ -13,23 +13,39 @@ import (
 	"route256.ozon.ru/project/loms/internal/app/loms"
 	"route256.ozon.ru/project/loms/internal/config"
 	"route256.ozon.ru/project/loms/internal/mw"
-	order_repository "route256.ozon.ru/project/loms/internal/repository/order"
-	stock_repository "route256.ozon.ru/project/loms/internal/repository/stock"
+	pgs "route256.ozon.ru/project/loms/internal/repository/pgs"
+	order_pgs_repository "route256.ozon.ru/project/loms/internal/repository/pgs/order"
+	stock_pgs_repository "route256.ozon.ru/project/loms/internal/repository/pgs/stock"
 	notes_usecase "route256.ozon.ru/project/loms/internal/service/loms"
 	lomsDesc "route256.ozon.ru/project/loms/pkg/api/v1"
 )
 
 func main() {
 	ctx := context.Background()
-	lomsConfig := config.GetConfig(ctx)
+	lomsConfig, err := config.GetConfig(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dbConnection := connectToDB(ctx, lomsConfig)
+	defer dbConnection.Close()
 
 	grpcServer := createGRPCServer()
-	controller := createLomsServer()
+	controller := createLomsServer(dbConnection)
 
 	lomsDesc.RegisterLomsServer(grpcServer, controller)
 
 	startGRPCServer(grpcServer, lomsConfig.LomsGrpcPort)
 	startHttpServer(grpcServer, controller, lomsConfig.LomsHttpPort)
+}
+
+func connectToDB(ctx context.Context, config *config.Config) *pgs.DB {
+	dbPool, err := pgs.ConnectToPgsDb(ctx, config, false)
+	if err != nil {
+		log.Fatalln("Cannot initialize connection to postgres")
+	}
+
+	return dbPool
 }
 
 func createGRPCServer() *grpc.Server {
@@ -44,9 +60,9 @@ func createGRPCServer() *grpc.Server {
 	return grpcServer
 }
 
-func createLomsServer() *loms.Server {
-	orderRepository := order_repository.NewOrderMemoryRepository()
-	stockRepository := stock_repository.NewStockMemoryRepository()
+func createLomsServer(dbConnection *pgs.DB) *loms.Server {
+	orderRepository := order_pgs_repository.NewOrderPgsRepository(dbConnection)
+	stockRepository := stock_pgs_repository.NewStocksPgRepository(dbConnection)
 	useCase := notes_usecase.NewService(orderRepository, stockRepository)
 	return loms.NewServer(useCase)
 }
@@ -76,7 +92,7 @@ func startHttpServer(grpcServer *grpc.Server, controller *loms.Server, httpPort 
 	}
 
 	handler := grpcHandlerFunc(grpcServer, mux)
-	handler = mw.WithHTTPLoggingMiddleware(mw.WithHTTPCorsMiddleware(mux)) // todo chain
+	handler = mw.WithHTTPLoggingMiddleware(mw.WithHTTPCorsMiddleware(handler)) // todo chain
 	gwServer := &http.Server{
 		Addr:    httpPort,
 		Handler: handler,

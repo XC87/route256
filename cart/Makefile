@@ -16,6 +16,8 @@ cover:
 test:
 	go test -v -parallel 45 -race  ./internal/repository
 	go test -v -parallel 45 -race  ./internal/service
+test_intergration:
+	go test -v -parallel 45 -race  ./tests/main_integration_test.go
 
 lint:
 	@echo Running gocyclo linter...

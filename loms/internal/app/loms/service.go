@@ -26,15 +26,3 @@ type Server struct {
 func NewServer(impl LomsService) *Server {
 	return &Server{impl: impl}
 }
-
-var orderStatusMap = map[model.OrderStatus]servicepb.OrderInfoResponse_StatusEnum{
-	model.New:             servicepb.OrderInfoResponse_new,
-	model.AwaitingPayment: servicepb.OrderInfoResponse_awaiting_payment,
-	model.Failed:          servicepb.OrderInfoResponse_failed,
-	model.Paid:            servicepb.OrderInfoResponse_paid,
-	model.Cancelled:       servicepb.OrderInfoResponse_cancelled,
-}
-
-func mapStatus(orderStatus model.OrderStatus) servicepb.OrderInfoResponse_StatusEnum {
-	return orderStatusMap[orderStatus]
-}

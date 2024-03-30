@@ -18,6 +18,8 @@ func (s *Server) OrderCreate(ctx context.Context, request *servicepb.OrderCreate
 		switch {
 		case errors.Is(err, order_usecase.ErrOrderCantReserve):
 			return nil, status.Errorf(codes.FailedPrecondition, err.Error())
+		case errors.Is(err, order_usecase.ErrOrderSkuNotFound):
+			return nil, status.Errorf(codes.FailedPrecondition, err.Error())
 		default:
 			return nil, status.Errorf(codes.Internal, "Failed to create order: %v", err)
 		}
