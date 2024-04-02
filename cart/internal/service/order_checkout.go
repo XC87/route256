@@ -11,7 +11,7 @@ func (cartService *CartService) OrderCheckout(ctx context.Context, userId int64)
 		return 0, ErrUserInvalid
 	}
 
-	cart, err := cartService.GetItemsByUserId(userId)
+	cart, err := cartService.GetItemsByUserId(ctx, userId)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", ErrCartCantGet, err)
 	}

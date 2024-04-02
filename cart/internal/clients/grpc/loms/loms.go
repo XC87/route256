@@ -27,12 +27,13 @@ func NewLomsGrpcClient(ctx context.Context, serviceHost string) (service.LomsSer
 
 	grpcClient := servicepb.NewLomsClient(conn)
 
-	/*
-		go func() {
-			<-ctx.Done()
-			conn.Close()
-		}()
-	*/
+	go func() {
+		<-ctx.Done()
+		log.Println("Shutting down grpc client")
+		if err = conn.Close(); err != nil {
+			log.Println("Failed to shutdown grpc client: ", err)
+		}
+	}()
 
 	log.Println("Loms grpc: connected to " + serviceHost)
 

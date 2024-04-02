@@ -21,8 +21,8 @@ const (
 )
 
 type CartService interface {
-	AddItem(userId int64, item domain.Item) error
-	GetItemsByUserId(userId int64) (*service.CartResponse, error)
+	AddItem(ctx context.Context, userId int64, item domain.Item) error
+	GetItemsByUserId(ctx context.Context, userId int64) (*service.CartResponse, error)
 	DeleteItem(userId int64, skuId int64) error
 	DeleteItemsByUserId(userId int64) error
 	OrderCheckout(ctx context.Context, userId int64) (int64, error)

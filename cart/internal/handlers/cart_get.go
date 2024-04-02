@@ -16,7 +16,7 @@ func (h *Handler) GetItemsByUserId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userCart, err := h.cartService.GetItemsByUserId(cartGetReq.UserId)
+	userCart, err := h.cartService.GetItemsByUserId(r.Context(), cartGetReq.UserId)
 	jsonResponse := []byte("{}")
 	status := http.StatusNotFound
 

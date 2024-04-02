@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/goleak"
 	product2 "route256.ozon.ru/project/cart/internal/clients/http/product"
 	"route256.ozon.ru/project/cart/internal/domain"
 	"route256.ozon.ru/project/cart/internal/service/mock"
@@ -11,8 +12,6 @@ import (
 )
 
 func TestCartService_AddItem(t *testing.T) {
-	ctx := context.Background()
-
 	type fields struct {
 		productService *mock.ProductServiceMock
 		lomsService    *mock.LomsServiceMock
@@ -22,6 +21,8 @@ func TestCartService_AddItem(t *testing.T) {
 		userId int64
 		sku    domain.Item
 	}
+
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		prepare func(f *fields, args args)
@@ -32,7 +33,7 @@ func TestCartService_AddItem(t *testing.T) {
 			name: "Check success cart add",
 			prepare: func(f *fields, args args) {
 				f.lomsService.GetStockInfoMock.Expect(ctx, uint32(args.sku.Sku_id)).Return(5, nil)
-				f.productService.GetProductMock.Expect(args.sku.Sku_id).Return(&product2.ProductGetProductResponse{}, nil)
+				f.productService.GetProductMock.Expect(ctx, args.sku.Sku_id).Return(&domain.Product{}, nil)
 				f.repository.AddItemMock.Expect(args.userId, args.sku).Return(nil)
 			},
 			args: args{
@@ -58,6 +59,22 @@ func TestCartService_AddItem(t *testing.T) {
 		},
 
 		{
+			name: "Check not enough error",
+			prepare: func(f *fields, args args) {
+				f.lomsService.GetStockInfoMock.Expect(ctx, uint32(args.sku.Sku_id)).Return(5, nil)
+				f.productService.GetProductMock.Expect(ctx, args.sku.Sku_id).Return(&domain.Product{}, nil)
+			},
+			args: args{
+				userId: 31337,
+				sku: domain.Item{
+					Sku_id: 773297411,
+					Count:  1000,
+				},
+			},
+			wantErr: ErrStockInsufficient,
+		},
+
+		{
 			name:    "Adding an service to the cart with an invalid user ID",
 			prepare: func(f *fields, args args) {},
 			args: args{
@@ -73,7 +90,7 @@ func TestCartService_AddItem(t *testing.T) {
 		{
 			name: "Adding an service to the cart with an invalid SKU ID",
 			prepare: func(f *fields, args args) {
-				f.productService.GetProductMock.Expect(args.sku.Sku_id).Return(nil, product2.ErrProductNotFound)
+				f.productService.GetProductMock.Expect(ctx, args.sku.Sku_id).Return(nil, product2.ErrProductNotFound)
 			},
 			args: args{
 				userId: 31337,
@@ -85,6 +102,7 @@ func TestCartService_AddItem(t *testing.T) {
 			wantErr: ErrProductNotFound,
 		},
 	}
+	defer goleak.VerifyNone(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
@@ -99,7 +117,7 @@ func TestCartService_AddItem(t *testing.T) {
 			cartService := NewCartService(f.repository, f.productService, f.lomsService)
 			tt.prepare(&f, tt.args)
 
-			err := cartService.AddItem(tt.args.userId, tt.args.sku)
+			err := cartService.AddItem(ctx, tt.args.userId, tt.args.sku)
 			require.ErrorIs(t, err, tt.wantErr)
 		})
 	}

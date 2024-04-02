@@ -1,10 +1,11 @@
 package service
 
 import (
+	"context"
 	"sort"
 )
 
-func (cartService *CartService) GetItemsByUserId(userId int64) (*CartResponse, error) {
+func (cartService *CartService) GetItemsByUserId(ctx context.Context, userId int64) (*CartResponse, error) {
 	if userId <= 0 {
 		return nil, ErrUserInvalid
 	}
@@ -12,6 +13,11 @@ func (cartService *CartService) GetItemsByUserId(userId int64) (*CartResponse, e
 	skuMap, err := cartService.repository.GetItemsByUserId(userId)
 	if err != nil {
 		return nil, err
+	}
+
+	var cartResponse CartResponse
+	if len(skuMap) == 0 {
+		return &cartResponse, nil
 	}
 	skuIdList := make([]int64, 0, len(skuMap))
 	for skuId := range skuMap {
@@ -21,12 +27,12 @@ func (cartService *CartService) GetItemsByUserId(userId int64) (*CartResponse, e
 		return skuIdList[i] < skuIdList[j]
 	})
 
-	var cartResponse CartResponse
-	for _, skuId := range skuIdList {
-		productResponse, err := cartService.productService.GetProduct(skuId)
-		if err != nil {
-			return &cartResponse, err
-		}
+	list, err := cartService.productService.GetProductList(ctx, skuIdList)
+	if err != nil {
+		return &cartResponse, err
+	}
+	for _, productResponse := range list {
+		skuId := productResponse.Sku
 		item := &CartItem{
 			SkuId: skuId,
 			Name:  productResponse.Name,
