@@ -1,10 +1,11 @@
 package service
 
 import (
+	"context"
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"route256.ozon.ru/project/cart/internal/clients/http/product"
+	"go.uber.org/goleak"
 	"route256.ozon.ru/project/cart/internal/domain"
 	"route256.ozon.ru/project/cart/internal/service/mock"
 	"testing"
@@ -19,6 +20,7 @@ func TestCartService_GetItemsByUserId(t *testing.T) {
 	type args struct {
 		userId int64
 	}
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		prepare func(f *fields, args args, want *CartResponse)
@@ -35,9 +37,12 @@ func TestCartService_GetItemsByUserId(t *testing.T) {
 						Count:  want.Items[0].Count,
 					},
 				}
-				f.productService.GetProductMock.Expect(want.Items[0].SkuId).Return(&product.ProductGetProductResponse{
-					Name:  want.Items[0].Name,
-					Price: want.Items[0].Price,
+				f.productService.GetProductListMock.Expect(ctx, []int64{want.Items[0].SkuId}).Return([]*domain.Product{
+					{
+						Sku:   want.Items[0].SkuId,
+						Name:  want.Items[0].Name,
+						Price: want.Items[0].Price,
+					},
 				}, nil)
 				f.repository.GetItemsByUserIdMock.Expect(args.userId).Return(maps, nil)
 			},
@@ -79,6 +84,8 @@ func TestCartService_GetItemsByUserId(t *testing.T) {
 			wantErr: ErrUserInvalid,
 		},
 	}
+
+	defer goleak.VerifyNone(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mc := minimock.NewController(t)
@@ -91,7 +98,7 @@ func TestCartService_GetItemsByUserId(t *testing.T) {
 
 			cartService := NewCartService(f.repository, f.productService, f.lomsService)
 			tt.prepare(&f, tt.args, tt.want)
-			res, err := cartService.GetItemsByUserId(tt.args.userId)
+			res, err := cartService.GetItemsByUserId(ctx, tt.args.userId)
 			assert.Equal(t, tt.want, res)
 			require.ErrorIs(t, err, tt.wantErr)
 		})

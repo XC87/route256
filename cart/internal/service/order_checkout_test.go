@@ -4,14 +4,14 @@ import (
 	"context"
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
-	product2 "route256.ozon.ru/project/cart/internal/clients/http/product"
+	"go.uber.org/goleak"
+	"math/rand/v2"
 	"route256.ozon.ru/project/cart/internal/domain"
 	"route256.ozon.ru/project/cart/internal/service/mock"
 	"testing"
 )
 
 func TestCartService_OrderCheckout(t *testing.T) {
-	ctx := context.Background()
 	type fields struct {
 		repository     *mock.RepositoryMock
 		productService *mock.ProductServiceMock
@@ -21,6 +21,7 @@ func TestCartService_OrderCheckout(t *testing.T) {
 		userId int64
 		skuId  int64
 	}
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		prepare func(f *fields, args args)
@@ -33,7 +34,7 @@ func TestCartService_OrderCheckout(t *testing.T) {
 				f.repository.GetItemsByUserIdMock.Expect(args.userId).Return(nil, ErrCartCantGet)
 			},
 			args: args{
-				userId: 31337,
+				userId: rand.Int64(),
 			},
 			wantErr: ErrCartCantGet,
 		},
@@ -44,7 +45,7 @@ func TestCartService_OrderCheckout(t *testing.T) {
 				f.repository.GetItemsByUserIdMock.Expect(args.userId).Return(domain.ItemsMap{}, nil)
 			},
 			args: args{
-				userId: 31337,
+				userId: rand.Int64(),
 			},
 			wantErr: ErrCartIsEmpty,
 		},
@@ -57,22 +58,28 @@ func TestCartService_OrderCheckout(t *testing.T) {
 						Count:  1,
 					},
 				}, nil)
-				f.productService.GetProductMock.Expect(31337).Return(&product2.ProductGetProductResponse{}, nil)
 				items := []domain.Item{
 					{
 						Sku_id: 31337,
 						Count:  1,
 					},
 				}
+				Product := []*domain.Product{
+					{
+						Sku: 31337,
+					},
+				}
+				f.productService.GetProductListMock.Expect(ctx, []int64{31337}).Return(Product, nil)
 				f.lomsService.CreateOrderMock.Expect(ctx, args.userId, items).Return(1, nil)
 				f.repository.DeleteItemsByUserIdMock.Expect(args.userId).Return(nil)
 			},
 			args: args{
-				userId: 31337,
+				userId: rand.Int64(),
 			},
 			wantErr: nil,
 		},
 	}
+	defer goleak.VerifyNone(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()

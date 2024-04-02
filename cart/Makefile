@@ -16,8 +16,11 @@ cover:
 test:
 	go test -v -parallel 45 -race  ./internal/repository
 	go test -v -parallel 45 -race  ./internal/service
+	go test -v -parallel 45 -race  ./pkg/errgroup
 test_intergration:
 	go test -v -parallel 45 -race  ./tests/main_integration_test.go
+bench_intergration:
+	go test -bench=. -benchtime=1s -count=1  -v  ./tests/main_benchmark_test.go
 
 lint:
 	@echo Running gocyclo linter...

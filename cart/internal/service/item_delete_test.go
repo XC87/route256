@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/goleak"
 	"route256.ozon.ru/project/cart/internal/service/mock"
 	"testing"
 )
@@ -45,6 +46,7 @@ func TestCartService_DeleteItem(t *testing.T) {
 			wantErr: ErrUserInvalid,
 		},
 	}
+	defer goleak.VerifyNone(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()

@@ -5,7 +5,6 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/assert"
 	"route256.ozon.ru/project/loms/internal/model"
-	stock_repository "route256.ozon.ru/project/loms/internal/repository/stock"
 	order_usecase "route256.ozon.ru/project/loms/internal/service/loms/mock"
 	"testing"
 )
@@ -31,7 +30,7 @@ func TestService_OrderCreate(t *testing.T) {
 			},
 			mockSetup: func(f *fields, order *model.Order) {
 				f.mockStockRepository.GetCountBySkuMock.Expect(ctx, order.Items[0].SKU).Return(1, nil)
-				f.mockStockRepository.GetBySkuMock.Expect(ctx, order.Items[0].SKU).Return(stock_repository.Product{SKU: order.Items[0].SKU, TotalCount: 5, Reserved: 0}, nil)
+				f.mockStockRepository.GetBySkuMock.Expect(ctx, order.Items[0].SKU).Return(&model.ProductStock{SKU: order.Items[0].SKU, TotalCount: 5, Reserved: 0}, nil)
 				f.mockStockRepository.ReserveMock.Expect(ctx, order.Items).Return(nil)
 
 				f.mockOrderRepository.OrderCreateMock.Expect(ctx, order).Return(1, nil)
@@ -49,7 +48,7 @@ func TestService_OrderCreate(t *testing.T) {
 			},
 			mockSetup: func(f *fields, order *model.Order) {
 				f.mockStockRepository.GetCountBySkuMock.Expect(ctx, order.Items[0].SKU).Return(1, nil)
-				f.mockStockRepository.GetBySkuMock.Expect(ctx, order.Items[0].SKU).Return(stock_repository.Product{SKU: order.Items[0].SKU, TotalCount: 5, Reserved: 0}, nil)
+				f.mockStockRepository.GetBySkuMock.Expect(ctx, order.Items[0].SKU).Return(&model.ProductStock{SKU: order.Items[0].SKU, TotalCount: 5, Reserved: 0}, nil)
 
 				f.mockOrderRepository.OrderCreateMock.Expect(ctx, order).Return(1, nil)
 				f.mockOrderRepository.OrderUpdateMock.Expect(ctx, order).Return(nil)

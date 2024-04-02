@@ -3,6 +3,7 @@ package repository
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/goleak"
 	"route256.ozon.ru/project/cart/internal/domain"
 	"testing"
 )
@@ -16,6 +17,10 @@ func BenchmarkInMemoryStorage(b *testing.B) {
 			Count:  0,
 		})
 	}
+}
+
+func TestMain(m *testing.M) {
+	goleak.VerifyTestMain(m)
 }
 
 func TestMemory_AddItem(t *testing.T) {

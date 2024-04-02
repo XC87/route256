@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"errors"
-	product2 "route256.ozon.ru/project/cart/internal/clients/http/product"
+	product "route256.ozon.ru/project/cart/internal/clients/http/product"
 	"route256.ozon.ru/project/cart/internal/domain"
 )
 
@@ -26,11 +26,12 @@ type Repository interface {
 }
 
 type ProductService interface {
-	GetProduct(sku int64) (*product2.ProductGetProductResponse, error)
+	GetProduct(ctx context.Context, sku int64) (*domain.Product, error)
+	GetProductList(ctx context.Context, sku []int64) ([]*domain.Product, error)
 }
 
 var (
-	ErrProductNotFound     = product2.ErrProductNotFound
+	ErrProductNotFound     = product.ErrProductNotFound
 	ErrProductCountInvalid = errors.New("item count invalid")
 	ErrStockInsufficient   = errors.New("insufficient stock")
 	ErrUserInvalid         = errors.New("user invalid")
