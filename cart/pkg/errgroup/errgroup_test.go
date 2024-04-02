@@ -52,7 +52,7 @@ func TestErrGroup(t *testing.T) {
 		if err := eg.Wait(); !assert.ErrorIs(t, err, ErrorTest) {
 			t.Error("Expected same error")
 		}
-		// проверяем что обе задачи завершились
-		assert.Equal(t, 2, len(outPutChannel))
+		// проверяем что завершилась только 1 задача, вторая словила ошибку
+		assert.Equal(t, 1, len(outPutChannel))
 	})
 }

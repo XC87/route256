@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Поитогу вышло очень похоже на errgroup
 type Group struct {
 	cancel  func(error)
 	wg      sync.WaitGroup
@@ -14,20 +15,20 @@ type Group struct {
 	err     error
 }
 
+// Функция входа
 func WithContext(ctx context.Context) (*Group, context.Context) {
 	ctx, cancel := context.WithCancelCause(ctx)
 	return &Group{cancel: cancel, outchan: make(chan any, 1)}, ctx
 }
 
+// По сути финальная функция ожидает завершение всех горутин
 func (g *Group) Wait() error {
 	g.wg.Wait()
 
-	if g.cancel != nil {
-		g.cancel(g.err)
-	}
 	return g.err
 }
 
+// запуск горутин, rps осуществляется за счёт timeticker
 func (g *Group) Go(f func() (any, error)) {
 	if g.ticker != nil {
 		<-g.ticker.C
@@ -38,12 +39,16 @@ func (g *Group) Go(f func() (any, error)) {
 		defer g.wg.Done()
 
 		result, err := f()
+		// если горутина завершилась с ошибкой
+		// то запускаем отмену контекста чтобы не ждать завершения других горутин
 		if err != nil && g.err == nil {
 			g.err = err
 			if g.cancel != nil {
 				g.cancel(g.err)
+				return
 			}
 		}
+		// если всё ок то кладём результат в канал
 		g.outchan <- result
 	}()
 }
@@ -55,9 +60,11 @@ func (g *Group) SetLimit(n int) {
 	}
 	interval := time.Second / time.Duration(n)
 	g.ticker = time.NewTicker(interval)
-	g.outchan = make(chan any, n)
+	g.outchan = make(chan any, n) // пересоздаём канал согласно кол-ву горутин
 }
 
+// Возвращаем генерик канал, заодно запускам горутинку ожидания конца, чтобы закрыть канал
+// чтобы не блокировать range
 func (g *Group) GetOutChan() <-chan any {
 	go func() {
 		g.wg.Wait()
