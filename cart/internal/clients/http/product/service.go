@@ -42,10 +42,11 @@ func NewProductService(config *config.Config) *ProductService {
 var ErrProductNotFound = errors.New("product not found")
 
 func (service *ProductService) GetProductList(ctx context.Context, skuList []int64) ([]*domain.Product, error) {
-	var ProductList []*domain.Product
+	var productList []*domain.Product
 
 	eg, ctx := errgroup.WithContext(context.Background())
 	eg.SetLimit(service.limit)
+	// запускаем горуты с отменой запуска если в процессе что-то пошло не так
 	for _, sku := range skuList {
 		select {
 		case <-ctx.Done():
@@ -57,15 +58,11 @@ func (service *ProductService) GetProductList(ctx context.Context, skuList []int
 		}
 	}
 
-	outPutChannel := eg.GetOutChan() // get output channel
+	outPutChannel := eg.GetOutChan() // получаем канал
 	if outPutChannel != nil {
 		for productInfo := range outPutChannel {
-			ProductListResponse := productInfo.(*domain.Product)
-			ProductList = append(ProductList, &domain.Product{
-				Sku:   ProductListResponse.Sku,
-				Name:  ProductListResponse.Name,
-				Price: ProductListResponse.Price,
-			})
+			product := productInfo.(*domain.Product)
+			productList = append(productList, product)
 		}
 	}
 
@@ -74,7 +71,7 @@ func (service *ProductService) GetProductList(ctx context.Context, skuList []int
 		return nil, err
 	}
 
-	return ProductList, nil
+	return productList, nil
 }
 
 func (service *ProductService) GetProduct(ctx context.Context, sku int64) (*domain.Product, error) {
@@ -90,7 +87,7 @@ func (service *ProductService) GetProduct(ctx context.Context, sku int64) (*doma
 
 	req, err := http.NewRequestWithContext(ctx, "POST", service.host+getProductUrl, bytes.NewReader(jsonRequest))
 	if err != nil {
-		return nil, fmt.Errorf("cant connect to product ser2vice: %w", err)
+		return nil, fmt.Errorf("cant connect to product service: %w", err)
 	}
 
 	resp, err := service.client.Do(req)
