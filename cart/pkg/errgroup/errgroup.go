@@ -68,6 +68,7 @@ func (g *Group) SetLimit(n int) {
 func (g *Group) GetOutChan() <-chan any {
 	go func() {
 		g.wg.Wait()
+		g.ticker.Stop()
 		close(g.outchan)
 	}()
 	return g.outchan
