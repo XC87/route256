@@ -29,6 +29,10 @@ func (service *ProductService) WithTransport(transport Transport) {
 	service.client.Transport = &transport
 }
 
+func (service *ProductService) WithRoundTripper(roundTripper http.RoundTripper) {
+	service.client.Transport = roundTripper
+}
+
 func NewProductService(config *config.Config) *ProductService {
 	client := &http.Client{
 		Timeout: config.ProductServiceTimeout,

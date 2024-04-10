@@ -13,6 +13,7 @@ type Group struct {
 	ticker  *time.Ticker
 	outchan chan any
 	err     error
+	errOnce sync.Once
 }
 
 // Функция входа
@@ -41,12 +42,13 @@ func (g *Group) Go(f func() (any, error)) {
 		result, err := f()
 		// если горутина завершилась с ошибкой
 		// то запускаем отмену контекста чтобы не ждать завершения других горутин
-		if err != nil && g.err == nil {
-			g.err = err
-			if g.cancel != nil {
+		if err != nil {
+			g.errOnce.Do(func() {
+				g.err = err
 				g.cancel(g.err)
-				return
-			}
+			})
+			return
+
 		}
 		// если всё ок то кладём результат в канал
 		g.outchan <- result

@@ -23,11 +23,10 @@ func (cartService *CartService) GetItemsByUserId(ctx context.Context, userId int
 	for skuId := range skuMap {
 		skuIdList = append(skuIdList, skuId)
 	}
-	sort.Slice(skuIdList, func(i, j int) bool {
-		return skuIdList[i] < skuIdList[j]
-	})
-
 	list, err := cartService.productService.GetProductList(ctx, skuIdList)
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].Sku < list[j].Sku
+	})
 	if err != nil {
 		return &cartResponse, err
 	}
