@@ -42,7 +42,7 @@ func (g *Group) Go(f func() (any, error)) {
 		result, err := f()
 		// если горутина завершилась с ошибкой
 		// то запускаем отмену контекста чтобы не ждать завершения других горутин
-		if err != nil {
+		if err != nil && g.cancel != nil {
 			g.errOnce.Do(func() {
 				g.err = err
 				g.cancel(g.err)
