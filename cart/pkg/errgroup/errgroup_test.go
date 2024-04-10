@@ -45,6 +45,12 @@ func TestErrGroup(t *testing.T) {
 		eg.Go(func() (result any, err error) {
 			return nil, ErrorTest
 		})
+		eg.Go(func() (result any, err error) {
+			return nil, ErrorTest
+		})
+		eg.Go(func() (result any, err error) {
+			return nil, ErrorTest
+		})
 
 		outPutChannel := eg.GetOutChan()
 		assert.NotNil(t, outPutChannel)
