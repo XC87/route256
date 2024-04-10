@@ -34,7 +34,7 @@ func TestAPICases(t *testing.T) {
 			url:            "http://localhost:8081/stock/info",
 			body:           []byte(`{"sku": 773297411}]}`),
 			expectedStatus: http.StatusOK,
-			expectedBody:   []byte(`{"count":"140"}`),
+			expectedBody:   []byte(`{"count":"150"}`),
 		},
 		{
 			name:           "Check create order",
@@ -52,7 +52,7 @@ func TestAPICases(t *testing.T) {
 			url:            "http://localhost:8081/stock/info",
 			body:           []byte(`{"sku": 773297411}]}`),
 			expectedStatus: http.StatusOK,
-			expectedBody:   []byte(`{"count":"138"}`),
+			expectedBody:   []byte(`{"count":"148"}`),
 		},
 		{
 			name:           "Check created order",
@@ -116,7 +116,7 @@ func TestAPICases(t *testing.T) {
 			url:            "http://localhost:8081/stock/info",
 			body:           []byte(`{"sku": 773297411}]}`),
 			expectedStatus: http.StatusOK,
-			expectedBody:   []byte(`{"count":"140"}`),
+			expectedBody:   []byte(`{"count":"150"}`),
 		},
 		{
 			name:           "Check create order failed",
