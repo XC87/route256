@@ -12,6 +12,7 @@ type ProductGetProductResponse struct {
 	Price uint32 `json:"price,omitempty"`
 	//	Price *int64  `json:"price,omitempty"`
 }
+type ProductGetProductResponseСhannel chan ProductGetProductResponse
 
 type ProductListSkusRequest struct {
 	// Токен для доступа, нужно получить в Телеграмме у преподавателя

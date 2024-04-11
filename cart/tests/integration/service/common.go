@@ -45,7 +45,8 @@ func (s *Suit) TestAdd() {
 		Sku_id: 4679011,
 		Count:  10,
 	}
-	err := s.cartService.AddItem(userId, item)
+	ctx := context.Background()
+	err := s.cartService.AddItem(ctx, userId, item)
 	s.Require().NoError(err)
 }
 
@@ -65,8 +66,9 @@ func (s *Suit) TestList() {
 	cartResponse.Items = append(cartResponse.Items, cartItem)
 	cartResponse.TotalPrice += uint32(item.Count) * cartItem.Price
 
-	_ = s.cartService.AddItem(userId, item)
-	res, err := s.cartService.GetItemsByUserId(userId)
+	ctx := context.Background()
+	_ = s.cartService.AddItem(ctx, userId, item)
+	res, err := s.cartService.GetItemsByUserId(ctx, userId)
 	assert.Equal(s.T(), &cartResponse, res)
 	s.Require().NoError(err)
 }

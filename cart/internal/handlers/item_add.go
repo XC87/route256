@@ -27,7 +27,7 @@ func (h *Handler) AddItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := h.cartService.AddItem(itemAdd.UserId, domain.Item{
+	if err := h.cartService.AddItem(r.Context(), itemAdd.UserId, domain.Item{
 		Sku_id: itemAdd.SkuId,
 		Count:  itemAdd.Count,
 	}); err != nil {

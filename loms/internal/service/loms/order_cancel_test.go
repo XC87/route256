@@ -6,7 +6,6 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/assert"
 	"route256.ozon.ru/project/loms/internal/model"
-	stock_repository "route256.ozon.ru/project/loms/internal/repository/stock"
 	order_usecase "route256.ozon.ru/project/loms/internal/service/loms/mock"
 	"testing"
 )
@@ -52,7 +51,7 @@ func TestService_OrderCancel(t *testing.T) {
 			orderID: 3,
 			mockSetup: func(s *fields, orderID int64) {
 				order := &model.Order{Id: orderID, Items: []model.Item{{SKU: 1, Count: 5}}}
-				s.mockStockRepository.GetBySkuMock.Expect(ctx, 1).Return(stock_repository.Product{SKU: 1, TotalCount: 5, Reserved: 0}, nil)
+				s.mockStockRepository.GetBySkuMock.Expect(ctx, 1).Return(&model.ProductStock{SKU: 1, TotalCount: 5, Reserved: 0}, nil)
 				s.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(order, nil)
 			},
 			expectedError: ErrOrderCantUnReserve,
@@ -62,7 +61,7 @@ func TestService_OrderCancel(t *testing.T) {
 			orderID: 4,
 			mockSetup: func(s *fields, orderID int64) {
 				order := &model.Order{Id: 4, Items: []model.Item{{SKU: 2, Count: 5}}}
-				s.mockStockRepository.GetBySkuMock.Expect(ctx, 2).Return(stock_repository.Product{SKU: 2, TotalCount: 5, Reserved: 6}, nil)
+				s.mockStockRepository.GetBySkuMock.Expect(ctx, 2).Return(&model.ProductStock{SKU: 2, TotalCount: 5, Reserved: 6}, nil)
 				s.mockStockRepository.UnReserveMock.Expect(ctx, order.Items).Return(nil)
 
 				s.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(order, nil)

@@ -14,6 +14,7 @@ type Config struct {
 	ProductServiceRetryStatus []int         `env:"PRODUCT_SERVER_RETRY_STATUS, default=420, 429"`
 	ProductServiceRetryCount  int           `env:"PRODUCT_SERVER_RETRY_COUNT, default=3"`
 	ProductServiceTimeout     time.Duration `env:"PRODUCT_SERVER_TIMEOUT, default=5s"`
+	ProductServiceLimit       int           `env:"PRODUCT_SERVER_LIMIT, default=10"`
 }
 
 func GetConfig(ctx context.Context) (*Config, error) {
