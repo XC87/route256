@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	//_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"route256.ozon.ru/project/cart/internal/clients/grpc/loms"
@@ -20,6 +21,7 @@ func main() {
 	ctx := context.Background()
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
+
 	cartConfig, err := config.GetConfig(ctx)
 	if err != nil {
 		log.Fatal(err)

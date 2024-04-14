@@ -75,7 +75,18 @@ func (repo *OrderPgsRepository) OrderCreate(ctx context.Context, order *model.Or
 }
 
 func (repo *OrderPgsRepository) OrderUpdate(ctx context.Context, order *model.Order) error {
-	q := repo.DbPool.GetUpdateQueries(ctx)
+	tx, err := repo.DbPool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func(tx pgx.Tx, ctx context.Context) {
+		err := tx.Rollback(ctx)
+		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			log.Printf("cannot rollback transaction")
+		}
+	}(tx, ctx)
+
+	q := queries.New(tx)
 
 	params := queries.UpdateOrderParams{
 		Status:    model.MapStatusToId(order.Status),
@@ -84,23 +95,42 @@ func (repo *OrderPgsRepository) OrderUpdate(ctx context.Context, order *model.Or
 		UpdatedAt: pgtype.Timestamp{Time: order.UpdatedAt, Valid: true},
 		ID:        order.Id,
 	}
-	err := q.UpdateOrder(ctx, params)
+	err = q.UpdateOrder(ctx, params)
 	if err != nil {
-		return fmt.Errorf("cannot set status of order: %w", err)
+		return fmt.Errorf("cannot set update order: %w", err)
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot commit update of order transaction: %w", err)
 	}
 	return nil
 }
 
 func (repo *OrderPgsRepository) SetStatus(ctx context.Context, id int64, status model.OrderStatus) error {
-	q := repo.DbPool.GetUpdateQueries(ctx)
+	tx, err := repo.DbPool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func(tx pgx.Tx, ctx context.Context) {
+		err := tx.Rollback(ctx)
+		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			log.Printf("cannot rollback transaction")
+		}
+	}(tx, ctx)
+
+	q := queries.New(tx)
 
 	params := queries.UpdateOrderStatusParams{
 		Status: model.MapStatusToId(status),
 		ID:     id,
 	}
-	err := q.UpdateOrderStatus(ctx, params)
+	err = q.UpdateOrderStatus(ctx, params)
 	if err != nil {
 		return fmt.Errorf("cannot set status of order: %w", err)
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot commit set status of order transaction: %w", err)
 	}
 
 	return nil

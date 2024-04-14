@@ -14,6 +14,7 @@ func TestService_OrderCreate(t *testing.T) {
 	type fields struct {
 		mockOrderRepository *order_usecase.OrderRepositoryMock
 		mockStockRepository *order_usecase.StockRepositoryMock
+		mockEventManager    *order_usecase.EventManagersMock
 	}
 	testCases := []struct {
 		name          string
@@ -36,6 +37,8 @@ func TestService_OrderCreate(t *testing.T) {
 				f.mockOrderRepository.OrderCreateMock.Expect(ctx, order).Return(1, nil)
 				f.mockOrderRepository.OrderUpdateMock.Expect(ctx, order).Return(nil)
 
+				f.mockEventManager.PublishMock.Return(nil)
+
 			},
 			expectedError: nil,
 		},
@@ -53,6 +56,8 @@ func TestService_OrderCreate(t *testing.T) {
 				f.mockOrderRepository.OrderCreateMock.Expect(ctx, order).Return(1, nil)
 				f.mockOrderRepository.OrderUpdateMock.Expect(ctx, order).Return(nil)
 
+				f.mockEventManager.PublishMock.Return(nil)
+
 			},
 			expectedError: ErrOrderCantReserve,
 		},
@@ -64,12 +69,14 @@ func TestService_OrderCreate(t *testing.T) {
 			mc := minimock.NewController(t)
 			mockOrderRepository := order_usecase.NewOrderRepositoryMock(mc)
 			mockStockRepository := order_usecase.NewStockRepositoryMock(mc)
+			mockEventsManagerRepository := order_usecase.NewEventManagersMock(mc)
 			f := &fields{
 				mockOrderRepository,
 				mockStockRepository,
+				mockEventsManagerRepository,
 			}
 			tc.mockSetup(f, tc.order)
-			service := NewService(mockOrderRepository, mockStockRepository)
+			service := NewService(mockOrderRepository, mockStockRepository, mockEventsManagerRepository)
 			_, err := service.OrderCreate(ctx, tc.order)
 			assert.Equal(t, tc.expectedError, err)
 		})

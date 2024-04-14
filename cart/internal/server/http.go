@@ -25,7 +25,7 @@ func (s *HTTPServer) Listen(ctx context.Context) {
 	go func() {
 		<-ctx.Done()
 		log.Println("Shutting down http")
-		if err := s.server.Shutdown(context.Background()); err != nil {
+		if err := s.server.Shutdown(ctx); err != nil {
 			log.Println("Failed to shutdown http server: ", err)
 		}
 	}()

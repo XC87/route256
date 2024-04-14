@@ -5,6 +5,8 @@ services:
     build: ./cart/
     ports:
       - "8082:8080"
+    stop_signal: SIGINT
+    stop_grace_period: 30s
   loms:
     image: loms
     build: ./loms/
@@ -14,6 +16,8 @@ services:
       - "8095:8085"
     environment:
       LOMS_GRPC_HOST: loms:50051
+      KAFKA_BROKERS: ${KAFKA_BROKERS}
+      KAFKA_TOPIC_NAME: ${KAFKA_TOPIC_NAME}
       POSTGRES_DB_HOST: loms-db
       POSTGRES_DB_SLAVE_HOST: loms-db-slave
       POSTGRES_DB: ${POSTGRES_DB}
@@ -24,47 +28,40 @@ services:
     depends_on:
       loms-db:
         condition: service_healthy
-
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+  notifier:
+    image: notifier
+    build: ./notifier/
+    depends_on: [ loms, kafka0 ]
+    deploy:
+      replicas: 3
+    environment:
+      KAFKA_BROKERS: ${KAFKA_BROKERS}
+      KAFKA_TOPIC_NAME: ${KAFKA_TOPIC_NAME}
+      KAFKA_CONSUMER_NAME: ${KAFKA_CONSUMER_NAME}
+    stop_signal: SIGINT
+    stop_grace_period: 30s
   loms-db:
-    image: docker.io/bitnami/postgresql:16
-    container_name: loms-db
-    environment:
-      POSTGRESQL_USERNAME: ${POSTGRES_USER}
-      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRESQL_PGAUDIT_LOG: ${POSTGRESQL_PGAUDIT_LOG}
-      POSTGRESQL_LOG_HOSTNAME: ${POSTGRESQL_LOG_HOSTNAME}
-      POSTGRESQL_REPLICATION_MODE: ${POSTGRESQL_REPLICATION_MODE}
-      POSTGRESQL_REPLICATION_USER: ${POSTGRESQL_REPLICATION_USER}
-      POSTGRESQL_REPLICATION_PASSWORD: ${POSTGRESQL_REPLICATION_PASSWORD}
-      POSTGRESQL_HOST_AUTH_METHOD: ${POSTGRESQL_HOST_AUTH_METHOD}
-    volumes:
-      - ./pglomsdata/init:/docker-entrypoint-initdb.d/
-    ports:
-      - "5442:5432"
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+    extends:
+      file: docker/loms-db.yml
+      service: loms-db
   loms-db-slave:
-    image: docker.io/bitnami/postgresql:16
-    container_name: loms-db-slave
-    ports:
-      - '5433:5432'
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-    depends_on: [ loms-db ]
-    environment:
-      POSTGRESQL_USERNAME: ${POSTGRES_USER}
-      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRESQL_PGAUDIT_LOG: ${POSTGRESQL_PGAUDIT_LOG}
-      POSTGRESQL_LOG_HOSTNAME: ${POSTGRESQL_LOG_HOSTNAME}
-      POSTGRESQL_REPLICATION_MODE: slave
-      POSTGRESQL_REPLICATION_USER: ${POSTGRESQL_REPLICATION_USER}
-      POSTGRESQL_REPLICATION_PASSWORD: ${POSTGRESQL_REPLICATION_PASSWORD}
-      POSTGRESQL_MASTER_HOST: loms-db
-      POSTGRESQL_MASTER_PORT_NUMBER: 5432
-      #POSTGRESQL_REPLICATION_PORT_NUMBER: 5433
+    extends:
+      file: docker/loms-db.yml
+      service: loms-db-slave
+  kafka-ui:
+    extends:
+      file: docker/kafka.yml
+      service: kafka-ui
+  kafka0:
+    extends:
+      file: docker/kafka.yml
+      service: kafka0
+  kafka-init-topics:
+    extends:
+      file: docker/kafka.yml
+      service: kafka-init-topics
 volumes:
   pglomsdata:
     driver: local

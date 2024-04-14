@@ -17,7 +17,11 @@ func (s *Service) OrderPay(ctx context.Context, id int64) error {
 
 	switch order.Status {
 	case model.AwaitingPayment:
-		return s.OrderRepository.OrderPay(ctx, id)
+		err = s.OrderRepository.OrderPay(ctx, id)
+		if err == nil {
+			s.EventManager.Publish(ctx, "order-events", order)
+		}
+		return err
 	case model.Paid:
 		return ErrOrderAlreadyPaid
 	default:

@@ -22,9 +22,15 @@ type StockRepository interface {
 	UnReserve(ctx context.Context, items []model.Item) error
 }
 
+type EventManagers interface {
+	Subscribe(event string, fn func(ctx context.Context, data any) error)
+	Publish(ctx context.Context, event string, data any) error
+}
+
 type Service struct {
 	OrderRepository OrderRepository
 	StockRepository StockRepository
+	EventManager    EventManagers
 }
 
 var (
@@ -40,8 +46,8 @@ var (
 	ErrReserveNotEnough     = errors.New("not enough items in reserve")
 )
 
-func NewService(orderRepository OrderRepository, stockRepository StockRepository) *Service {
-	return &Service{OrderRepository: orderRepository, StockRepository: stockRepository}
+func NewService(orderRepository OrderRepository, stockRepository StockRepository, eventManager EventManagers) *Service {
+	return &Service{OrderRepository: orderRepository, StockRepository: stockRepository, EventManager: eventManager}
 }
 
 func checkIfCanReserve(rep StockRepository, items []model.Item) error {

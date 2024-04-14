@@ -14,6 +14,7 @@ func TestService_OrderPay(t *testing.T) {
 	type fields struct {
 		mockOrderRepository *order_usecase.OrderRepositoryMock
 		mockStockRepository *order_usecase.StockRepositoryMock
+		mockEventManager    *order_usecase.EventManagersMock
 	}
 	testCases := []struct {
 		name          string
@@ -27,6 +28,7 @@ func TestService_OrderPay(t *testing.T) {
 			mockSetup: func(f *fields, orderID int64) {
 				f.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(&model.Order{Status: model.AwaitingPayment}, nil)
 				f.mockOrderRepository.OrderPayMock.Expect(ctx, orderID).Return(nil)
+				f.mockEventManager.PublishMock.Return(nil)
 			},
 			expectedError: nil,
 		},
@@ -69,12 +71,14 @@ func TestService_OrderPay(t *testing.T) {
 			mc := minimock.NewController(t)
 			mockOrderRepository := order_usecase.NewOrderRepositoryMock(mc)
 			mockStockRepository := order_usecase.NewStockRepositoryMock(mc)
+			mockEventsManagerRepository := order_usecase.NewEventManagersMock(mc)
 			f := &fields{
 				mockOrderRepository,
 				mockStockRepository,
+				mockEventsManagerRepository,
 			}
 			tc.mockSetup(f, tc.orderID)
-			service := NewService(mockOrderRepository, mockStockRepository)
+			service := NewService(mockOrderRepository, mockStockRepository, mockEventsManagerRepository)
 			err := service.OrderPay(ctx, tc.orderID)
 			assert.Equal(t, tc.expectedError, err)
 		})

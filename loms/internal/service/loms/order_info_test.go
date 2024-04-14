@@ -52,12 +52,14 @@ func TestService_OrderInfo(t *testing.T) {
 			mc := minimock.NewController(t)
 			mockOrderRepository := order_usecase.NewOrderRepositoryMock(mc)
 			mockStockRepository := order_usecase.NewStockRepositoryMock(mc)
+			mockEventsManagerRepository := order_usecase.NewEventManagersMock(mc)
+
 			f := &fields{
 				mockOrderRepository,
 				mockStockRepository,
 			}
 			tc.mockSetup(f, tc.orderID)
-			service := NewService(mockOrderRepository, mockStockRepository)
+			service := NewService(mockOrderRepository, mockStockRepository, mockEventsManagerRepository)
 			_, err := service.OrderInfo(ctx, tc.orderID)
 			assert.Equal(t, tc.expectedError, err)
 		})

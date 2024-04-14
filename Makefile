@@ -3,6 +3,7 @@ LOCAL_BIN := $(CURDIR)/bin
 build-all:
 	cd cart && make build
 	cd loms && make build
+	cd notifier && make build
 
 run-all:
 	docker-compose up --force-recreate --build
