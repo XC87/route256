@@ -1,0 +1,3 @@
+echo Waiting for Kafka to be ready...
+cub kafka-ready -b kafka0:29092 1 30
+kafka-topics --create --topic loms.order-events --partitions 2 --replication-factor 1 --if-not-exists --bootstrap-server kafka0:29092

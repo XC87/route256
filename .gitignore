@@ -10,4 +10,5 @@ coverage.html
 coverage.out
 .idea
 bin/*
+*/bin
 vendor-proto

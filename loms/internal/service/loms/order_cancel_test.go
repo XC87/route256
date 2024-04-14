@@ -15,6 +15,7 @@ func TestService_OrderCancel(t *testing.T) {
 	type fields struct {
 		mockOrderRepository *order_usecase.OrderRepositoryMock
 		mockStockRepository *order_usecase.StockRepositoryMock
+		mockEventManager    *order_usecase.EventManagersMock
 	}
 	testCases := []struct {
 		name          string
@@ -66,6 +67,8 @@ func TestService_OrderCancel(t *testing.T) {
 
 				s.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(order, nil)
 				s.mockOrderRepository.OrderCancelMock.Expect(ctx, orderID).Return(nil)
+
+				s.mockEventManager.PublishMock.Return(nil)
 			},
 			expectedError: nil,
 		},
@@ -76,13 +79,15 @@ func TestService_OrderCancel(t *testing.T) {
 			mc := minimock.NewController(t)
 			mockOrderRepository := order_usecase.NewOrderRepositoryMock(mc)
 			mockStockRepository := order_usecase.NewStockRepositoryMock(mc)
+			mockEventsManagerRepository := order_usecase.NewEventManagersMock(mc)
 			f := &fields{
 				mockOrderRepository,
 				mockStockRepository,
+				mockEventsManagerRepository,
 			}
 			t.Parallel()
 			tc.mockSetup(f, tc.orderID)
-			service := NewService(mockOrderRepository, mockStockRepository)
+			service := NewService(mockOrderRepository, mockStockRepository, mockEventsManagerRepository)
 			err := service.OrderCancel(ctx, tc.orderID)
 			assert.Equal(t, tc.expectedError, err)
 		})
