@@ -30,6 +30,11 @@ services:
     volumes:
       - ./kafka/run_workaround.sh:/tmp/run_workaround.sh
     command: "bash -c '/tmp/run_workaround.sh && /etc/confluent/docker/run'"
+    healthcheck:
+      test: nc -z localhost 9092 || exit -1
+      interval: 5s
+      timeout: 10s
+      retries: 10
 
   kafka-init-topics:
     container_name: kafka-init-topics

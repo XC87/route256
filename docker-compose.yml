@@ -28,6 +28,11 @@ services:
     depends_on:
       loms-db:
         condition: service_healthy
+      kafka0:
+        condition: service_healthy
+      kafka-init-topics:
+        condition: service_completed_successfully
+
     stop_signal: SIGINT
     stop_grace_period: 30s
   notifier:
