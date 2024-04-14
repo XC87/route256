@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package loms;
 
-option go_package="route256/loms/internal/app/grpc/pb";
+option go_package="route256/loms/internal/notifier/grpc/pb";
 
 import "google/protobuf/empty.proto";
 import "validate/validate.proto";

@@ -39,6 +39,8 @@ func TestService_OrderCreate(t *testing.T) {
 
 				f.mockEventManager.TriggerMock.Return(nil)
 
+				f.mockEventManager.PublishMock.Return(nil)
+
 			},
 			expectedError: nil,
 		},
@@ -57,6 +59,8 @@ func TestService_OrderCreate(t *testing.T) {
 				f.mockOrderRepository.OrderUpdateMock.Return(nil)
 
 				f.mockEventManager.TriggerMock.Return(nil)
+
+				f.mockEventManager.PublishMock.Return(nil)
 
 			},
 			expectedError: ErrOrderCantReserve,
