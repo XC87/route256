@@ -37,7 +37,7 @@ func TestService_OrderCreate(t *testing.T) {
 				f.mockOrderRepository.OrderCreateMock.Expect(ctx, order).Return(1, nil)
 				f.mockOrderRepository.OrderUpdateMock.Expect(ctx, order).Return(nil)
 
-				f.mockEventManager.PublishMock.Return(nil)
+				f.mockEventManager.TriggerMock.Return(nil)
 
 			},
 			expectedError: nil,
@@ -56,7 +56,7 @@ func TestService_OrderCreate(t *testing.T) {
 				f.mockOrderRepository.OrderCreateMock.Expect(ctx, order).Return(1, nil)
 				f.mockOrderRepository.OrderUpdateMock.Expect(ctx, order).Return(nil)
 
-				f.mockEventManager.PublishMock.Return(nil)
+				f.mockEventManager.TriggerMock.Return(nil)
 
 			},
 			expectedError: ErrOrderCantReserve,

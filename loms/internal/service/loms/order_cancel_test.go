@@ -68,7 +68,7 @@ func TestService_OrderCancel(t *testing.T) {
 				s.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(order, nil)
 				s.mockOrderRepository.OrderCancelMock.Expect(ctx, orderID).Return(nil)
 
-				s.mockEventManager.PublishMock.Return(nil)
+				s.mockEventManager.TriggerMock.Return(nil)
 			},
 			expectedError: nil,
 		},

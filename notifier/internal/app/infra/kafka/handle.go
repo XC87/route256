@@ -23,7 +23,6 @@ func newOrderChangedHandler(handler ConsumerHandler) *orderChangeHandler {
 	return &orderChangeHandler{handler: handler}
 }
 
-// ConsumeClaim читаем до тех пор пока сессия не завершилась
 func (h *orderChangeHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for {
 		select {
@@ -57,12 +56,10 @@ func (h *orderChangeHandler) ConsumeClaim(session sarama.ConsumerGroupSession, c
 	}
 }
 
-// Setup Начинаем новую сессию, до ConsumeClaim
 func (h *orderChangeHandler) Setup(_ sarama.ConsumerGroupSession) error {
 	return nil
 }
 
-// Cleanup завершает сессию, после того, как все ConsumeClaim завершатся
 func (h *orderChangeHandler) Cleanup(_ sarama.ConsumerGroupSession) error {
 	return nil
 }

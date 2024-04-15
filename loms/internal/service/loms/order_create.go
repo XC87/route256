@@ -19,7 +19,7 @@ func (s *Service) OrderCreate(ctx context.Context, order *model.Order) (int64, e
 		return 0, err
 	}
 	order.Id = orderId
-	s.EventManager.Publish(ctx, "order-events", order)
+	s.EventManager.Trigger(ctx, "order-events", order)
 
 	order.Id = orderId
 	if err = s.checkAndReserveStock(ctx, order); err != nil {
@@ -31,7 +31,7 @@ func (s *Service) OrderCreate(ctx context.Context, order *model.Order) (int64, e
 	if err != nil {
 		return 0, err
 	}
-	s.EventManager.Publish(ctx, "order-events", order)
+	s.EventManager.Trigger(ctx, "order-events", order)
 
 	return orderId, nil
 }
@@ -54,7 +54,7 @@ func (s *Service) checkAndReserveStock(ctx context.Context, order *model.Order) 
 		if err != nil {
 			return err
 		}
-		s.EventManager.Publish(ctx, "order-events", order)
+		s.EventManager.Trigger(ctx, "order-events", order)
 		return ErrOrderCantReserve
 	}
 

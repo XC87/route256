@@ -24,7 +24,7 @@ type StockRepository interface {
 
 type EventManagers interface {
 	Subscribe(event string, fn func(ctx context.Context, data any) error)
-	Publish(ctx context.Context, event string, data any) error
+	Trigger(ctx context.Context, event string, data any) error
 }
 
 type Service struct {

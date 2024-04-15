@@ -51,13 +51,9 @@ func (c *OrderChangedHandler) Run(ctx context.Context, wg *sync.WaitGroup) {
 		log.Println("[consumer-group] run")
 
 		for {
-			// `Consume` should be called inside an infinite loop, when a
-			// server-side rebalance happens, the consumer session will need to be
-			// recreated to get the new claims
 			if err := c.consumerGroup.Consume(ctx, c.topics, c.handler); err != nil {
 				log.Printf("Error from consume: %v\n", err)
 			}
-			// check if context was cancelled, signaling that the consumer should stop
 			if ctx.Err() != nil {
 				c.consumerGroup.Close()
 				log.Printf("[consumer-group]: ctx closed: %s\n", ctx.Err().Error())
@@ -92,18 +88,10 @@ func (c *OrderChangedHandler) runCGErrorHandler(ctx context.Context, wg *sync.Wa
 func newConsumerGroup(brokers []string, groupID string, opts ...Option) (sarama.ConsumerGroup, error) {
 	config := sarama.NewConfig()
 	config.Version = sarama.MaxVersion
-	/*
-		sarama.OffsetNewest - получаем только новые сообщений, те, которые уже были игнорируются
-		sarama.OffsetOldest - читаем все с самого начала
-	*/
 	config.Consumer.Offsets.Initial = sarama.OffsetOldest
-	// Используется, если ваш offset "уехал" далеко и нужно пропустить невалидные сдвиги
 	config.Consumer.Group.ResetInvalidOffsets = true
-	// Сердцебиение консьюмера
 	config.Consumer.Group.Heartbeat.Interval = 3 * time.Second
-	// Таймаут сессии
 	config.Consumer.Group.Session.Timeout = 60 * time.Second
-	// Таймаут ребалансировки
 	config.Consumer.Group.Rebalance.Timeout = 60 * time.Second
 	//
 	config.Consumer.Return.Errors = true
@@ -113,7 +101,6 @@ func newConsumerGroup(brokers []string, groupID string, opts ...Option) (sarama.
 
 	config.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategyRoundRobin()}
 
-	// Применяем свои конфигурации
 	for _, opt := range opts {
 		opt.Apply(config)
 	}
