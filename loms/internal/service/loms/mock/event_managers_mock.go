@@ -18,17 +18,17 @@ type EventManagersMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
-	funcPublish          func(ctx context.Context, event string, data any) (err error)
-	inspectFuncPublish   func(ctx context.Context, event string, data any)
-	afterPublishCounter  uint64
-	beforePublishCounter uint64
-	PublishMock          mEventManagersMockPublish
-
-	funcSubscribe          func(event string, fn func(ctx context.Context, data any))
-	inspectFuncSubscribe   func(event string, fn func(ctx context.Context, data any))
+	funcSubscribe          func(event string, fn func(ctx context.Context, data any) error)
+	inspectFuncSubscribe   func(event string, fn func(ctx context.Context, data any) error)
 	afterSubscribeCounter  uint64
 	beforeSubscribeCounter uint64
 	SubscribeMock          mEventManagersMockSubscribe
+
+	funcTrigger          func(ctx context.Context, event string, data any) (err error)
+	inspectFuncTrigger   func(ctx context.Context, event string, data any)
+	afterTriggerCounter  uint64
+	beforeTriggerCounter uint64
+	TriggerMock          mEventManagersMockTrigger
 }
 
 // NewEventManagersMock returns a mock for order_usecase.EventManagers
@@ -39,232 +39,15 @@ func NewEventManagersMock(t minimock.Tester) *EventManagersMock {
 		controller.RegisterMocker(m)
 	}
 
-	m.PublishMock = mEventManagersMockPublish{mock: m}
-	m.PublishMock.callArgs = []*EventManagersMockPublishParams{}
-
 	m.SubscribeMock = mEventManagersMockSubscribe{mock: m}
 	m.SubscribeMock.callArgs = []*EventManagersMockSubscribeParams{}
+
+	m.TriggerMock = mEventManagersMockTrigger{mock: m}
+	m.TriggerMock.callArgs = []*EventManagersMockTriggerParams{}
 
 	t.Cleanup(m.MinimockFinish)
 
 	return m
-}
-
-type mEventManagersMockPublish struct {
-	mock               *EventManagersMock
-	defaultExpectation *EventManagersMockPublishExpectation
-	expectations       []*EventManagersMockPublishExpectation
-
-	callArgs []*EventManagersMockPublishParams
-	mutex    sync.RWMutex
-}
-
-// EventManagersMockPublishExpectation specifies expectation struct of the EventManagers.Publish
-type EventManagersMockPublishExpectation struct {
-	mock    *EventManagersMock
-	params  *EventManagersMockPublishParams
-	results *EventManagersMockPublishResults
-	Counter uint64
-}
-
-// EventManagersMockPublishParams contains parameters of the EventManagers.Publish
-type EventManagersMockPublishParams struct {
-	ctx   context.Context
-	event string
-	data  any
-}
-
-// EventManagersMockPublishResults contains results of the EventManagers.Publish
-type EventManagersMockPublishResults struct {
-	err error
-}
-
-// Expect sets up expected params for EventManagers.Publish
-func (mmPublish *mEventManagersMockPublish) Expect(ctx context.Context, event string, data any) *mEventManagersMockPublish {
-	if mmPublish.mock.funcPublish != nil {
-		mmPublish.mock.t.Fatalf("EventManagersMock.Publish mock is already set by Set")
-	}
-
-	if mmPublish.defaultExpectation == nil {
-		mmPublish.defaultExpectation = &EventManagersMockPublishExpectation{}
-	}
-
-	mmPublish.defaultExpectation.params = &EventManagersMockPublishParams{ctx, event, data}
-	for _, e := range mmPublish.expectations {
-		if minimock.Equal(e.params, mmPublish.defaultExpectation.params) {
-			mmPublish.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmPublish.defaultExpectation.params)
-		}
-	}
-
-	return mmPublish
-}
-
-// Inspect accepts an inspector function that has same arguments as the EventManagers.Publish
-func (mmPublish *mEventManagersMockPublish) Inspect(f func(ctx context.Context, event string, data any)) *mEventManagersMockPublish {
-	if mmPublish.mock.inspectFuncPublish != nil {
-		mmPublish.mock.t.Fatalf("Inspect function is already set for EventManagersMock.Publish")
-	}
-
-	mmPublish.mock.inspectFuncPublish = f
-
-	return mmPublish
-}
-
-// Return sets up results that will be returned by EventManagers.Publish
-func (mmPublish *mEventManagersMockPublish) Return(err error) *EventManagersMock {
-	if mmPublish.mock.funcPublish != nil {
-		mmPublish.mock.t.Fatalf("EventManagersMock.Publish mock is already set by Set")
-	}
-
-	if mmPublish.defaultExpectation == nil {
-		mmPublish.defaultExpectation = &EventManagersMockPublishExpectation{mock: mmPublish.mock}
-	}
-	mmPublish.defaultExpectation.results = &EventManagersMockPublishResults{err}
-	return mmPublish.mock
-}
-
-// Set uses given function f to mock the EventManagers.Publish method
-func (mmPublish *mEventManagersMockPublish) Set(f func(ctx context.Context, event string, data any) (err error)) *EventManagersMock {
-	if mmPublish.defaultExpectation != nil {
-		mmPublish.mock.t.Fatalf("Default expectation is already set for the EventManagers.Publish method")
-	}
-
-	if len(mmPublish.expectations) > 0 {
-		mmPublish.mock.t.Fatalf("Some expectations are already set for the EventManagers.Publish method")
-	}
-
-	mmPublish.mock.funcPublish = f
-	return mmPublish.mock
-}
-
-// When sets expectation for the EventManagers.Publish which will trigger the result defined by the following
-// Then helper
-func (mmPublish *mEventManagersMockPublish) When(ctx context.Context, event string, data any) *EventManagersMockPublishExpectation {
-	if mmPublish.mock.funcPublish != nil {
-		mmPublish.mock.t.Fatalf("EventManagersMock.Publish mock is already set by Set")
-	}
-
-	expectation := &EventManagersMockPublishExpectation{
-		mock:   mmPublish.mock,
-		params: &EventManagersMockPublishParams{ctx, event, data},
-	}
-	mmPublish.expectations = append(mmPublish.expectations, expectation)
-	return expectation
-}
-
-// Then sets up EventManagers.Publish return parameters for the expectation previously defined by the When method
-func (e *EventManagersMockPublishExpectation) Then(err error) *EventManagersMock {
-	e.results = &EventManagersMockPublishResults{err}
-	return e.mock
-}
-
-// Publish implements order_usecase.EventManagers
-func (mmPublish *EventManagersMock) Publish(ctx context.Context, event string, data any) (err error) {
-	mm_atomic.AddUint64(&mmPublish.beforePublishCounter, 1)
-	defer mm_atomic.AddUint64(&mmPublish.afterPublishCounter, 1)
-
-	if mmPublish.inspectFuncPublish != nil {
-		mmPublish.inspectFuncPublish(ctx, event, data)
-	}
-
-	mm_params := EventManagersMockPublishParams{ctx, event, data}
-
-	// Record call args
-	mmPublish.PublishMock.mutex.Lock()
-	mmPublish.PublishMock.callArgs = append(mmPublish.PublishMock.callArgs, &mm_params)
-	mmPublish.PublishMock.mutex.Unlock()
-
-	for _, e := range mmPublish.PublishMock.expectations {
-		if minimock.Equal(*e.params, mm_params) {
-			mm_atomic.AddUint64(&e.Counter, 1)
-			return e.results.err
-		}
-	}
-
-	if mmPublish.PublishMock.defaultExpectation != nil {
-		mm_atomic.AddUint64(&mmPublish.PublishMock.defaultExpectation.Counter, 1)
-		mm_want := mmPublish.PublishMock.defaultExpectation.params
-		mm_got := EventManagersMockPublishParams{ctx, event, data}
-		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
-			mmPublish.t.Errorf("EventManagersMock.Publish got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
-		}
-
-		mm_results := mmPublish.PublishMock.defaultExpectation.results
-		if mm_results == nil {
-			mmPublish.t.Fatal("No results are set for the EventManagersMock.Publish")
-		}
-		return (*mm_results).err
-	}
-	if mmPublish.funcPublish != nil {
-		return mmPublish.funcPublish(ctx, event, data)
-	}
-	mmPublish.t.Fatalf("Unexpected call to EventManagersMock.Publish. %v %v %v", ctx, event, data)
-	return
-}
-
-// PublishAfterCounter returns a count of finished EventManagersMock.Publish invocations
-func (mmPublish *EventManagersMock) PublishAfterCounter() uint64 {
-	return mm_atomic.LoadUint64(&mmPublish.afterPublishCounter)
-}
-
-// PublishBeforeCounter returns a count of EventManagersMock.Publish invocations
-func (mmPublish *EventManagersMock) PublishBeforeCounter() uint64 {
-	return mm_atomic.LoadUint64(&mmPublish.beforePublishCounter)
-}
-
-// Calls returns a list of arguments used in each call to EventManagersMock.Publish.
-// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
-func (mmPublish *mEventManagersMockPublish) Calls() []*EventManagersMockPublishParams {
-	mmPublish.mutex.RLock()
-
-	argCopy := make([]*EventManagersMockPublishParams, len(mmPublish.callArgs))
-	copy(argCopy, mmPublish.callArgs)
-
-	mmPublish.mutex.RUnlock()
-
-	return argCopy
-}
-
-// MinimockPublishDone returns true if the count of the Publish invocations corresponds
-// the number of defined expectations
-func (m *EventManagersMock) MinimockPublishDone() bool {
-	for _, e := range m.PublishMock.expectations {
-		if mm_atomic.LoadUint64(&e.Counter) < 1 {
-			return false
-		}
-	}
-
-	// if default expectation was set then invocations count should be greater than zero
-	if m.PublishMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterPublishCounter) < 1 {
-		return false
-	}
-	// if func was set then invocations count should be greater than zero
-	if m.funcPublish != nil && mm_atomic.LoadUint64(&m.afterPublishCounter) < 1 {
-		return false
-	}
-	return true
-}
-
-// MinimockPublishInspect logs each unmet expectation
-func (m *EventManagersMock) MinimockPublishInspect() {
-	for _, e := range m.PublishMock.expectations {
-		if mm_atomic.LoadUint64(&e.Counter) < 1 {
-			m.t.Errorf("Expected call to EventManagersMock.Publish with params: %#v", *e.params)
-		}
-	}
-
-	// if default expectation was set then invocations count should be greater than zero
-	if m.PublishMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterPublishCounter) < 1 {
-		if m.PublishMock.defaultExpectation.params == nil {
-			m.t.Error("Expected call to EventManagersMock.Publish")
-		} else {
-			m.t.Errorf("Expected call to EventManagersMock.Publish with params: %#v", *m.PublishMock.defaultExpectation.params)
-		}
-	}
-	// if func was set then invocations count should be greater than zero
-	if m.funcPublish != nil && mm_atomic.LoadUint64(&m.afterPublishCounter) < 1 {
-		m.t.Error("Expected call to EventManagersMock.Publish")
-	}
 }
 
 type mEventManagersMockSubscribe struct {
@@ -287,11 +70,11 @@ type EventManagersMockSubscribeExpectation struct {
 // EventManagersMockSubscribeParams contains parameters of the EventManagers.Subscribe
 type EventManagersMockSubscribeParams struct {
 	event string
-	fn    func(ctx context.Context, data any)
+	fn    func(ctx context.Context, data any) error
 }
 
 // Expect sets up expected params for EventManagers.Subscribe
-func (mmSubscribe *mEventManagersMockSubscribe) Expect(event string, fn func(ctx context.Context, data any)) *mEventManagersMockSubscribe {
+func (mmSubscribe *mEventManagersMockSubscribe) Expect(event string, fn func(ctx context.Context, data any) error) *mEventManagersMockSubscribe {
 	if mmSubscribe.mock.funcSubscribe != nil {
 		mmSubscribe.mock.t.Fatalf("EventManagersMock.Subscribe mock is already set by Set")
 	}
@@ -311,7 +94,7 @@ func (mmSubscribe *mEventManagersMockSubscribe) Expect(event string, fn func(ctx
 }
 
 // Inspect accepts an inspector function that has same arguments as the EventManagers.Subscribe
-func (mmSubscribe *mEventManagersMockSubscribe) Inspect(f func(event string, fn func(ctx context.Context, data any))) *mEventManagersMockSubscribe {
+func (mmSubscribe *mEventManagersMockSubscribe) Inspect(f func(event string, fn func(ctx context.Context, data any) error)) *mEventManagersMockSubscribe {
 	if mmSubscribe.mock.inspectFuncSubscribe != nil {
 		mmSubscribe.mock.t.Fatalf("Inspect function is already set for EventManagersMock.Subscribe")
 	}
@@ -335,7 +118,7 @@ func (mmSubscribe *mEventManagersMockSubscribe) Return() *EventManagersMock {
 }
 
 // Set uses given function f to mock the EventManagers.Subscribe method
-func (mmSubscribe *mEventManagersMockSubscribe) Set(f func(event string, fn func(ctx context.Context, data any))) *EventManagersMock {
+func (mmSubscribe *mEventManagersMockSubscribe) Set(f func(event string, fn func(ctx context.Context, data any) error)) *EventManagersMock {
 	if mmSubscribe.defaultExpectation != nil {
 		mmSubscribe.mock.t.Fatalf("Default expectation is already set for the EventManagers.Subscribe method")
 	}
@@ -349,7 +132,7 @@ func (mmSubscribe *mEventManagersMockSubscribe) Set(f func(event string, fn func
 }
 
 // Subscribe implements order_usecase.EventManagers
-func (mmSubscribe *EventManagersMock) Subscribe(event string, fn func(ctx context.Context, data any)) {
+func (mmSubscribe *EventManagersMock) Subscribe(event string, fn func(ctx context.Context, data any) error) {
 	mm_atomic.AddUint64(&mmSubscribe.beforeSubscribeCounter, 1)
 	defer mm_atomic.AddUint64(&mmSubscribe.afterSubscribeCounter, 1)
 
@@ -455,13 +238,230 @@ func (m *EventManagersMock) MinimockSubscribeInspect() {
 	}
 }
 
+type mEventManagersMockTrigger struct {
+	mock               *EventManagersMock
+	defaultExpectation *EventManagersMockTriggerExpectation
+	expectations       []*EventManagersMockTriggerExpectation
+
+	callArgs []*EventManagersMockTriggerParams
+	mutex    sync.RWMutex
+}
+
+// EventManagersMockTriggerExpectation specifies expectation struct of the EventManagers.Trigger
+type EventManagersMockTriggerExpectation struct {
+	mock    *EventManagersMock
+	params  *EventManagersMockTriggerParams
+	results *EventManagersMockTriggerResults
+	Counter uint64
+}
+
+// EventManagersMockTriggerParams contains parameters of the EventManagers.Trigger
+type EventManagersMockTriggerParams struct {
+	ctx   context.Context
+	event string
+	data  any
+}
+
+// EventManagersMockTriggerResults contains results of the EventManagers.Trigger
+type EventManagersMockTriggerResults struct {
+	err error
+}
+
+// Expect sets up expected params for EventManagers.Trigger
+func (mmTrigger *mEventManagersMockTrigger) Expect(ctx context.Context, event string, data any) *mEventManagersMockTrigger {
+	if mmTrigger.mock.funcTrigger != nil {
+		mmTrigger.mock.t.Fatalf("EventManagersMock.Trigger mock is already set by Set")
+	}
+
+	if mmTrigger.defaultExpectation == nil {
+		mmTrigger.defaultExpectation = &EventManagersMockTriggerExpectation{}
+	}
+
+	mmTrigger.defaultExpectation.params = &EventManagersMockTriggerParams{ctx, event, data}
+	for _, e := range mmTrigger.expectations {
+		if minimock.Equal(e.params, mmTrigger.defaultExpectation.params) {
+			mmTrigger.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmTrigger.defaultExpectation.params)
+		}
+	}
+
+	return mmTrigger
+}
+
+// Inspect accepts an inspector function that has same arguments as the EventManagers.Trigger
+func (mmTrigger *mEventManagersMockTrigger) Inspect(f func(ctx context.Context, event string, data any)) *mEventManagersMockTrigger {
+	if mmTrigger.mock.inspectFuncTrigger != nil {
+		mmTrigger.mock.t.Fatalf("Inspect function is already set for EventManagersMock.Trigger")
+	}
+
+	mmTrigger.mock.inspectFuncTrigger = f
+
+	return mmTrigger
+}
+
+// Return sets up results that will be returned by EventManagers.Trigger
+func (mmTrigger *mEventManagersMockTrigger) Return(err error) *EventManagersMock {
+	if mmTrigger.mock.funcTrigger != nil {
+		mmTrigger.mock.t.Fatalf("EventManagersMock.Trigger mock is already set by Set")
+	}
+
+	if mmTrigger.defaultExpectation == nil {
+		mmTrigger.defaultExpectation = &EventManagersMockTriggerExpectation{mock: mmTrigger.mock}
+	}
+	mmTrigger.defaultExpectation.results = &EventManagersMockTriggerResults{err}
+	return mmTrigger.mock
+}
+
+// Set uses given function f to mock the EventManagers.Trigger method
+func (mmTrigger *mEventManagersMockTrigger) Set(f func(ctx context.Context, event string, data any) (err error)) *EventManagersMock {
+	if mmTrigger.defaultExpectation != nil {
+		mmTrigger.mock.t.Fatalf("Default expectation is already set for the EventManagers.Trigger method")
+	}
+
+	if len(mmTrigger.expectations) > 0 {
+		mmTrigger.mock.t.Fatalf("Some expectations are already set for the EventManagers.Trigger method")
+	}
+
+	mmTrigger.mock.funcTrigger = f
+	return mmTrigger.mock
+}
+
+// When sets expectation for the EventManagers.Trigger which will trigger the result defined by the following
+// Then helper
+func (mmTrigger *mEventManagersMockTrigger) When(ctx context.Context, event string, data any) *EventManagersMockTriggerExpectation {
+	if mmTrigger.mock.funcTrigger != nil {
+		mmTrigger.mock.t.Fatalf("EventManagersMock.Trigger mock is already set by Set")
+	}
+
+	expectation := &EventManagersMockTriggerExpectation{
+		mock:   mmTrigger.mock,
+		params: &EventManagersMockTriggerParams{ctx, event, data},
+	}
+	mmTrigger.expectations = append(mmTrigger.expectations, expectation)
+	return expectation
+}
+
+// Then sets up EventManagers.Trigger return parameters for the expectation previously defined by the When method
+func (e *EventManagersMockTriggerExpectation) Then(err error) *EventManagersMock {
+	e.results = &EventManagersMockTriggerResults{err}
+	return e.mock
+}
+
+// Trigger implements order_usecase.EventManagers
+func (mmTrigger *EventManagersMock) Trigger(ctx context.Context, event string, data any) (err error) {
+	mm_atomic.AddUint64(&mmTrigger.beforeTriggerCounter, 1)
+	defer mm_atomic.AddUint64(&mmTrigger.afterTriggerCounter, 1)
+
+	if mmTrigger.inspectFuncTrigger != nil {
+		mmTrigger.inspectFuncTrigger(ctx, event, data)
+	}
+
+	mm_params := EventManagersMockTriggerParams{ctx, event, data}
+
+	// Record call args
+	mmTrigger.TriggerMock.mutex.Lock()
+	mmTrigger.TriggerMock.callArgs = append(mmTrigger.TriggerMock.callArgs, &mm_params)
+	mmTrigger.TriggerMock.mutex.Unlock()
+
+	for _, e := range mmTrigger.TriggerMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmTrigger.TriggerMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmTrigger.TriggerMock.defaultExpectation.Counter, 1)
+		mm_want := mmTrigger.TriggerMock.defaultExpectation.params
+		mm_got := EventManagersMockTriggerParams{ctx, event, data}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmTrigger.t.Errorf("EventManagersMock.Trigger got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmTrigger.TriggerMock.defaultExpectation.results
+		if mm_results == nil {
+			mmTrigger.t.Fatal("No results are set for the EventManagersMock.Trigger")
+		}
+		return (*mm_results).err
+	}
+	if mmTrigger.funcTrigger != nil {
+		return mmTrigger.funcTrigger(ctx, event, data)
+	}
+	mmTrigger.t.Fatalf("Unexpected call to EventManagersMock.Trigger. %v %v %v", ctx, event, data)
+	return
+}
+
+// TriggerAfterCounter returns a count of finished EventManagersMock.Trigger invocations
+func (mmTrigger *EventManagersMock) TriggerAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmTrigger.afterTriggerCounter)
+}
+
+// TriggerBeforeCounter returns a count of EventManagersMock.Trigger invocations
+func (mmTrigger *EventManagersMock) TriggerBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmTrigger.beforeTriggerCounter)
+}
+
+// Calls returns a list of arguments used in each call to EventManagersMock.Trigger.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmTrigger *mEventManagersMockTrigger) Calls() []*EventManagersMockTriggerParams {
+	mmTrigger.mutex.RLock()
+
+	argCopy := make([]*EventManagersMockTriggerParams, len(mmTrigger.callArgs))
+	copy(argCopy, mmTrigger.callArgs)
+
+	mmTrigger.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockTriggerDone returns true if the count of the Trigger invocations corresponds
+// the number of defined expectations
+func (m *EventManagersMock) MinimockTriggerDone() bool {
+	for _, e := range m.TriggerMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.TriggerMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterTriggerCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcTrigger != nil && mm_atomic.LoadUint64(&m.afterTriggerCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockTriggerInspect logs each unmet expectation
+func (m *EventManagersMock) MinimockTriggerInspect() {
+	for _, e := range m.TriggerMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to EventManagersMock.Trigger with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.TriggerMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterTriggerCounter) < 1 {
+		if m.TriggerMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to EventManagersMock.Trigger")
+		} else {
+			m.t.Errorf("Expected call to EventManagersMock.Trigger with params: %#v", *m.TriggerMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcTrigger != nil && mm_atomic.LoadUint64(&m.afterTriggerCounter) < 1 {
+		m.t.Error("Expected call to EventManagersMock.Trigger")
+	}
+}
+
 // MinimockFinish checks that all mocked methods have been called the expected number of times
 func (m *EventManagersMock) MinimockFinish() {
 	m.finishOnce.Do(func() {
 		if !m.minimockDone() {
-			m.MinimockPublishInspect()
-
 			m.MinimockSubscribeInspect()
+
+			m.MinimockTriggerInspect()
 			m.t.FailNow()
 		}
 	})
@@ -486,6 +486,6 @@ func (m *EventManagersMock) MinimockWait(timeout mm_time.Duration) {
 func (m *EventManagersMock) minimockDone() bool {
 	done := true
 	return done &&
-		m.MinimockPublishDone() &&
-		m.MinimockSubscribeDone()
+		m.MinimockSubscribeDone() &&
+		m.MinimockTriggerDone()
 }

@@ -26,7 +26,7 @@ func (s *Service) OrderCancel(ctx context.Context, id int64) error {
 
 	err = s.OrderRepository.OrderCancel(ctx, id)
 	if err == nil {
-		s.EventManager.Publish(ctx, "order-events", order)
+		s.EventManager.Trigger(ctx, "order-events", order)
 	}
 
 	return err

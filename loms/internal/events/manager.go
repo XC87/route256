@@ -19,7 +19,7 @@ func (em *EventManager) Subscribe(event string, fn func(ctx context.Context, dat
 	em.Subscribers[event] = append(em.Subscribers[event], fn)
 }
 
-func (em *EventManager) Publish(ctx context.Context, event string, data any) error {
+func (em *EventManager) Trigger(ctx context.Context, event string, data any) error {
 	if subscribers, ok := em.Subscribers[event]; ok {
 		for _, fn := range subscribers {
 			err := fn(ctx, data)

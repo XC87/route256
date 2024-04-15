@@ -28,7 +28,7 @@ func TestService_OrderPay(t *testing.T) {
 			mockSetup: func(f *fields, orderID int64) {
 				f.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(&model.Order{Status: model.AwaitingPayment}, nil)
 				f.mockOrderRepository.OrderPayMock.Expect(ctx, orderID).Return(nil)
-				f.mockEventManager.PublishMock.Return(nil)
+				f.mockEventManager.TriggerMock.Return(nil)
 			},
 			expectedError: nil,
 		},

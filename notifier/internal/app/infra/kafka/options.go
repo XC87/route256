@@ -4,7 +4,6 @@ import (
 	"github.com/IBM/sarama"
 )
 
-// Option is a configuration callback
 type Option interface {
 	Apply(*sarama.Config) error
 }
