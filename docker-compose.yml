@@ -2,20 +2,28 @@ version: "3.1"
 services:
   cart:
     image: cart
-    build: ./cart/
+    build:
+      context: ./
+      dockerfile: ./cart/Dockerfile
     ports:
-      - "8082:8080"
+      - "8080:8080"
+    environment:
+      LOMS_GRPC_HOST: loms:50051
+      TRACER_URL: ${TRACER_URL}
     stop_signal: SIGINT
     stop_grace_period: 30s
   loms:
     image: loms
-    build: ./loms/
+    build:
+      context: ./
+      dockerfile: ./loms/Dockerfile
     ports:
       - "50062:50051"
-      - "8091:8081"
+      - "8081:8081"
       - "8095:8085"
     environment:
       LOMS_GRPC_HOST: loms:50051
+      TRACER_URL: ${TRACER_URL}
       KAFKA_BROKERS: ${KAFKA_BROKERS}
       KAFKA_TOPIC_NAME: ${KAFKA_TOPIC_NAME}
       POSTGRES_DB_HOST: loms-db
@@ -37,11 +45,14 @@ services:
     stop_grace_period: 30s
   notifier:
     image: notifier
-    build: ./notifier/
+    build:
+      context: ./
+      dockerfile: ./notifier/Dockerfile
     depends_on: [ loms, kafka0 ]
     deploy:
       replicas: 3
     environment:
+      TRACER_URL: ${TRACER_URL}
       KAFKA_BROKERS: ${KAFKA_BROKERS}
       KAFKA_TOPIC_NAME: ${KAFKA_TOPIC_NAME}
       KAFKA_CONSUMER_NAME: ${KAFKA_CONSUMER_NAME}
@@ -67,6 +78,23 @@ services:
     extends:
       file: docker/kafka.yml
       service: kafka-init-topics
+  prometheus:
+    container_name: prometheus
+    extends:
+      file: docker/log-trace-metric.yml
+      service: prometheus
+  jaeger:
+    extends:
+      file: docker/log-trace-metric.yml
+      service: jaeger
+  grafana:
+    extends:
+      file: docker/log-trace-metric.yml
+      service: grafana
 volumes:
   pglomsdata:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
     driver: local

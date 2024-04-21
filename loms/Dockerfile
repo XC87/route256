@@ -2,12 +2,13 @@ FROM golang:1.22-alpine as builder
 
 WORKDIR /app
 
-COPY go.mod go.mod
-COPY go.sum go.sum
+COPY loms/go.mod go.mod
+COPY loms/go.sum go.sum
+COPY ./pkg/ ../pkg
 
 RUN go mod download
 
-COPY . .
+COPY ./loms/ .
 
 RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 RUN go build -o bin/loms-server ./cmd/loms-server

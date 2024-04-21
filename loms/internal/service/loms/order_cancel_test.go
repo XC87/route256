@@ -34,7 +34,7 @@ func TestService_OrderCancel(t *testing.T) {
 			name:    "Order Not Found",
 			orderID: 1,
 			mockSetup: func(s *fields, orderID int64) {
-				s.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(nil, errors.New("order not found"))
+				s.mockOrderRepository.OrderInfoMock.Return(nil, errors.New("order not found"))
 			},
 			expectedError: ErrOrderNotFound,
 		},
@@ -43,7 +43,7 @@ func TestService_OrderCancel(t *testing.T) {
 			orderID: 2,
 			mockSetup: func(s *fields, orderID int64) {
 				order := &model.Order{Status: model.Cancelled}
-				s.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(order, nil)
+				s.mockOrderRepository.OrderInfoMock.Return(order, nil)
 			},
 			expectedError: ErrOrderAlreadyCanceled,
 		},
@@ -52,8 +52,8 @@ func TestService_OrderCancel(t *testing.T) {
 			orderID: 3,
 			mockSetup: func(s *fields, orderID int64) {
 				order := &model.Order{Id: orderID, Items: []model.Item{{SKU: 1, Count: 5}}}
-				s.mockStockRepository.GetBySkuMock.Expect(ctx, 1).Return(&model.ProductStock{SKU: 1, TotalCount: 5, Reserved: 0}, nil)
-				s.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(order, nil)
+				s.mockStockRepository.GetBySkuMock.Return(&model.ProductStock{SKU: 1, TotalCount: 5, Reserved: 0}, nil)
+				s.mockOrderRepository.OrderInfoMock.Return(order, nil)
 			},
 			expectedError: ErrOrderCantUnReserve,
 		},
@@ -62,11 +62,11 @@ func TestService_OrderCancel(t *testing.T) {
 			orderID: 4,
 			mockSetup: func(s *fields, orderID int64) {
 				order := &model.Order{Id: 4, Items: []model.Item{{SKU: 2, Count: 5}}}
-				s.mockStockRepository.GetBySkuMock.Expect(ctx, 2).Return(&model.ProductStock{SKU: 2, TotalCount: 5, Reserved: 6}, nil)
-				s.mockStockRepository.UnReserveMock.Expect(ctx, order.Items).Return(nil)
+				s.mockStockRepository.GetBySkuMock.Return(&model.ProductStock{SKU: 2, TotalCount: 5, Reserved: 6}, nil)
+				s.mockStockRepository.UnReserveMock.Return(nil)
 
-				s.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(order, nil)
-				s.mockOrderRepository.OrderCancelMock.Expect(ctx, orderID).Return(nil)
+				s.mockOrderRepository.OrderInfoMock.Return(order, nil)
+				s.mockOrderRepository.OrderCancelMock.Return(nil)
 
 				s.mockEventManager.TriggerMock.Return(nil)
 			},

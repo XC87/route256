@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/asaskevich/govalidator"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -32,7 +32,7 @@ func (h *Handler) OrderCheckout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(jsonResponse)
 	if err != nil {
-		log.Println("error writing response:", err)
+		zap.L().Info("error writing response:", zap.Error(err))
 		return
 	}
 }

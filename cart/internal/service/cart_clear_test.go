@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
@@ -17,6 +18,7 @@ func TestCartService_DeleteItemsByUserId(t *testing.T) {
 	type args struct {
 		userId int64
 	}
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		prepare func(f *fields, args args)
@@ -26,7 +28,7 @@ func TestCartService_DeleteItemsByUserId(t *testing.T) {
 		{
 			name: "Successful deletion of the cart",
 			prepare: func(f *fields, args args) {
-				f.repository.DeleteItemsByUserIdMock.Expect(args.userId).Return(nil)
+				f.repository.DeleteItemsByUserIdMock.Return(nil)
 			},
 			args: args{
 				userId: 31337,
@@ -43,6 +45,7 @@ func TestCartService_DeleteItemsByUserId(t *testing.T) {
 			wantErr: ErrUserInvalid,
 		},
 	}
+
 	defer goleak.VerifyNone(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -57,7 +60,7 @@ func TestCartService_DeleteItemsByUserId(t *testing.T) {
 
 			cartService := NewCartService(f.repository, f.productService, f.lomsService)
 			tt.prepare(&f, tt.args)
-			err := cartService.DeleteItemsByUserId(tt.args.userId)
+			err := cartService.DeleteItemsByUserId(ctx, tt.args.userId)
 			require.ErrorIs(t, err, tt.wantErr)
 		})
 	}

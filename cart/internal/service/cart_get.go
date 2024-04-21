@@ -2,18 +2,23 @@ package service
 
 import (
 	"context"
+	"go.opentelemetry.io/otel"
 	"sort"
 )
 
 func (cartService *CartService) GetItemsByUserId(ctx context.Context, userId int64) (*CartResponse, error) {
+	ctx, span := otel.Tracer("default").Start(ctx, "GetItemsByUserId")
+	defer span.End()
+
 	if userId <= 0 {
 		return nil, ErrUserInvalid
 	}
 
-	skuMap, err := cartService.repository.GetItemsByUserId(userId)
+	skuMap, err := cartService.repository.GetItemsByUserId(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
+	span.AddEvent("cartService.repository.GetItemsByUserId")
 
 	var cartResponse CartResponse
 	if len(skuMap) == 0 {
@@ -24,6 +29,7 @@ func (cartService *CartService) GetItemsByUserId(ctx context.Context, userId int
 		skuIdList = append(skuIdList, skuId)
 	}
 	list, err := cartService.productService.GetProductList(ctx, skuIdList)
+	span.AddEvent("cartService.productService.GetProductList")
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].Sku < list[j].Sku
 	})

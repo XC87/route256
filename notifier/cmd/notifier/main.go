@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"route256.ozon.ru/pkg/tracer"
 	"route256.ozon.ru/project/notifier/internal/app/handlers"
 	"route256.ozon.ru/project/notifier/internal/app/infra/kafka"
 	"route256.ozon.ru/project/notifier/internal/config"
@@ -27,6 +28,11 @@ func main() {
 		Brokers:      config.KafkaBrokers,
 		TopicNames:   config.KafkaTopicNames,
 		ConsumerName: config.KafkaConsumerName,
+	}
+
+	tracerShutdown, err := tracer.InitTracer(config.TracerUrl, "notifier")
+	if err == nil {
+		defer tracerShutdown(ctx)
 	}
 
 	notifier := handlers.NewNotifier()

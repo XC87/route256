@@ -19,10 +19,10 @@ type LomsService interface {
 }
 
 type Repository interface {
-	AddItem(userId int64, item domain.Item) error
-	DeleteItem(userId int64, skuId int64) error
-	DeleteItemsByUserId(userId int64) error
-	GetItemsByUserId(userId int64) (domain.ItemsMap, error)
+	AddItem(ctx context.Context, userId int64, item domain.Item) error
+	DeleteItem(ctx context.Context, userId int64, skuId int64) error
+	DeleteItemsByUserId(ctx context.Context, userId int64) error
+	GetItemsByUserId(ctx context.Context, userId int64) (domain.ItemsMap, error)
 }
 
 type ProductService interface {

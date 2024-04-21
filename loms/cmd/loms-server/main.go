@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"github.com/exaring/otelpgx"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/contrib/propagators/jaeger"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
@@ -10,6 +14,9 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"route256.ozon.ru/pkg/logger"
+	"route256.ozon.ru/pkg/metrics"
+	"route256.ozon.ru/pkg/tracer"
 	"route256.ozon.ru/project/loms/internal/app/loms"
 	"route256.ozon.ru/project/loms/internal/config"
 	"route256.ozon.ru/project/loms/internal/events"
@@ -36,6 +43,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+	loggerShutdown := logger.InitLogger(lomsConfig.LogLevel, "loms")
+	defer loggerShutdown()
+
+	tracerShutdown, err := tracer.InitTracer(lomsConfig.TracerUrl, "loms")
+	if err == nil {
+		defer tracerShutdown(ctx)
+	}
+
 	dbConnection := connectToDB(ctx, lomsConfig)
 	defer dbConnection.Close()
 
@@ -51,9 +66,12 @@ func main() {
 }
 
 func connectToDB(ctx context.Context, config *config.Config) *pgs.DB {
-	dbPool, err := pgs.ConnectToPgsDb(ctx, config, false)
+	sqlMetrics := metrics.NewSqlMetrics()
+	otelPgxTracer := otelpgx.NewTracer()
+	sqlTracer := tracer.NewSqlTracerGroup(sqlMetrics, otelPgxTracer)
+	dbPool, err := pgs.ConnectToPgsDb(ctx, config, false, sqlTracer)
 	if err != nil {
-		log.Fatalln("Cannot initialize connection to postgres")
+		zap.S().Fatalln("Cannot initialize connection to postgres")
 	}
 
 	return dbPool
@@ -65,7 +83,9 @@ func createGRPCServer() *grpc.Server {
 			mw.Panic,
 			mw.Logger,
 			mw.Validate,
+			metrics.UnaryServerInterceptor,
 		),
+		grpc.StatsHandler(otelgrpc.NewServerHandler(otelgrpc.WithPropagators(jaeger.Jaeger{}))),
 	)
 	reflection.Register(grpcServer)
 	return grpcServer
@@ -82,17 +102,17 @@ func createLomsServer(dbConnection *pgs.DB, eventManager loms_usecase.EventManag
 func startGRPCServer(ctx context.Context, grpcServer *grpc.Server, port string) {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		zap.S().Fatalf("failed to listen: %v", err)
 	}
-	log.Printf("Server listening at %v", lis.Addr())
+	zap.S().Infof("Server listening at %v", lis.Addr())
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
+			zap.S().Fatalf("failed to serve: %v", err)
 		}
 	}()
 	go func() {
 		<-ctx.Done()
-		log.Println("Shutting down gprc server")
+		zap.L().Info("Shutting down gprc server")
 		grpcServer.Stop()
 	}()
 }
@@ -103,27 +123,30 @@ func startHttpServer(ctx context.Context, grpcServer *grpc.Server, controller *l
 
 	mux.Handle("/", gwMux)
 	serveSwagger(mux)
+	metrics.InitMetricsServer(mux)
 
 	if err := lomsDesc.RegisterLomsHandlerServer(ctx, gwMux, controller); err != nil {
-		log.Fatalf("failed to register gateway: %v", err)
+		zap.L().Fatal("failed to register gateway ", zap.Error(err))
 	}
 
 	handler := grpcHandlerFunc(grpcServer, mux)
 	handler = mw.WithHTTPLoggingMiddleware(mw.WithHTTPCorsMiddleware(handler)) // todo chain
+	handler = tracer.HandlerMiddleware(handler)
+
 	gwServer := &http.Server{
 		Addr:        httpPort,
 		Handler:     handler,
 		BaseContext: func(net.Listener) context.Context { return ctx },
 	}
-	log.Printf("Serving gRPC-Gateway on %s\n", gwServer.Addr)
+	zap.L().Info("Serving gRPC-Gateway on " + gwServer.Addr)
 	go func() {
 		<-ctx.Done()
-		log.Println("Shutting down http server")
+		zap.L().Info("Shutting down http server")
 		if err := gwServer.Shutdown(ctx); err != nil {
-			log.Println("Failed to shutdown server: ", err)
+			zap.S().Infof("Failed to shutdown server: ", err)
 		}
 	}()
-	log.Fatal(gwServer.ListenAndServe())
+	zap.L().Fatal("Failed to start http server: ", zap.Error(gwServer.ListenAndServe()))
 }
 
 func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {

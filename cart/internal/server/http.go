@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 	"route256.ozon.ru/project/cart/internal/config"
 	"time"
@@ -24,14 +24,14 @@ func NewHTTPServer(cartConfig *config.Config) *HTTPServer {
 func (s *HTTPServer) Listen(ctx context.Context) {
 	go func() {
 		<-ctx.Done()
-		log.Println("Shutting down http")
+		zap.L().Info("Shutting down http")
 		if err := s.server.Shutdown(ctx); err != nil {
-			log.Println("Failed to shutdown http server: ", err)
+			zap.L().Info("Failed to shutdown http server: ", zap.Error(err))
 		}
 	}()
 
-	log.Println("Starting server")
+	zap.L().Info("Starting server")
 	if err := s.server.ListenAndServe(); err != nil {
-		log.Fatal(err)
+		zap.L().Fatal("error starting server", zap.Error(err))
 	}
 }

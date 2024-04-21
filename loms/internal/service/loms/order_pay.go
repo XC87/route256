@@ -2,10 +2,14 @@ package order_usecase
 
 import (
 	"context"
+	"go.opentelemetry.io/otel"
 	"route256.ozon.ru/project/loms/internal/model"
 )
 
 func (s *Service) OrderPay(ctx context.Context, id int64) error {
+	ctx, span := otel.Tracer("default").Start(ctx, "OrderCreate")
+	defer span.End()
+
 	if id == 0 {
 		return ErrOrderInvalid
 	}

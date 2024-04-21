@@ -3,10 +3,16 @@ package service
 import (
 	"context"
 	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.uber.org/zap"
+	"route256.ozon.ru/pkg/logger"
 	"route256.ozon.ru/project/cart/internal/domain"
 )
 
 func (cartService *CartService) OrderCheckout(ctx context.Context, userId int64) (int64, error) {
+	ctx, span := otel.Tracer("default").Start(ctx, "OrderCheckout")
+	defer span.End()
+
 	if userId <= 0 {
 		return 0, ErrUserInvalid
 	}
@@ -23,11 +29,13 @@ func (cartService *CartService) OrderCheckout(ctx context.Context, userId int64)
 	items := convertCartToDomainItems(cart)
 	orderId, err := cartService.lomsService.CreateOrder(ctx, userId, items)
 	if err != nil {
+		zap.L().With(logger.GetTraceFields(ctx)...).Error(ErrOrderCreate.Error(), zap.Error(err))
 		return 0, fmt.Errorf("%s: %w", ErrOrderCreate, err)
 	}
 
-	err = cartService.DeleteItemsByUserId(userId)
+	err = cartService.DeleteItemsByUserId(ctx, userId)
 	if err != nil {
+		zap.L().With(logger.GetTraceFields(ctx)...).Error(ErrCartCantClear.Error(), zap.Error(err))
 		return 0, fmt.Errorf("%s: %w", ErrCartCantClear, err)
 	}
 

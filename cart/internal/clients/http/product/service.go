@@ -8,9 +8,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"route256.ozon.ru/pkg/metrics"
 	"route256.ozon.ru/project/cart/internal/config"
 	"route256.ozon.ru/project/cart/internal/domain"
 	"route256.ozon.ru/project/cart/pkg/errgroup"
+	"strconv"
+	"time"
 )
 
 const (
@@ -40,10 +43,12 @@ func NewProductService(config *config.Config) *ProductService {
 	return &ProductService{client: client,
 		host:  config.ProductServiceUrl,
 		token: config.ProductServiceToken,
-		limit: config.ProductServiceLimit}
+		limit: config.ProductServiceLimit,
+	}
 }
 
 var ErrProductNotFound = errors.New("product not found")
+var metricsGetProduct = metrics.CreateRequestMetrics("product", "getProductUrl", getProductUrl)
 
 func (service *ProductService) GetProductList(ctx context.Context, skuList []int64) ([]*domain.Product, error) {
 	var productList []*domain.Product
@@ -89,6 +94,7 @@ func (service *ProductService) GetProduct(ctx context.Context, sku int64) (*doma
 		return nil, err
 	}
 
+	start := time.Now()
 	req, err := http.NewRequestWithContext(ctx, "POST", service.host+getProductUrl, bytes.NewReader(jsonRequest))
 	if err != nil {
 		return nil, fmt.Errorf("cant connect to product service: %w", err)
@@ -98,6 +104,8 @@ func (service *ProductService) GetProduct(ctx context.Context, sku int64) (*doma
 	if err != nil {
 		return nil, fmt.Errorf("cant done request: %w", err)
 	}
+	metricsGetProduct.RequestCounter.WithLabelValues("POST "+service.host+getProductUrl, strconv.Itoa(resp.StatusCode)).Inc()
+	metricsGetProduct.ResponseTime.Observe(time.Since(start).Seconds())
 
 	defer func() {
 		resp.Body.Close()

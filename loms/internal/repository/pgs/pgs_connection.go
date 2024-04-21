@@ -5,16 +5,22 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"log"
+	"go.uber.org/zap"
 	"route256.ozon.ru/project/loms/internal/config"
 	"route256.ozon.ru/project/loms/internal/repository/pgs/queries"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func ConnectToPgsDb(ctx context.Context, config *config.Config, masterOnly bool) (*DB, error) {
+type SqlTracer interface {
+	TraceQueryStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryStartData) context.Context
+	TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData)
+}
+
+func ConnectToPgsDb(ctx context.Context, config *config.Config, masterOnly bool, tracer SqlTracer) (*DB, error) {
 	connString := fmt.Sprintf(
 		"postgresql://%s:%s@%s/%s;",
 		config.LomsDbUser,
@@ -34,7 +40,7 @@ func ConnectToPgsDb(ctx context.Context, config *config.Config, masterOnly bool)
 			config.LomsDbName,
 		)
 	}
-	return ConnectByDataSourceNames(ctx, connString)
+	return ConnectByDataSourceNames(ctx, connString, tracer)
 }
 
 // https://github.com/tsenart/nap Взял отсюда и переделал
@@ -43,7 +49,7 @@ type DB struct {
 	count uint64
 }
 
-func ConnectByDataSourceNames(ctx context.Context, dataSourceNames string) (*DB, error) {
+func ConnectByDataSourceNames(ctx context.Context, dataSourceNames string, tracer SqlTracer) (*DB, error) {
 	conns := strings.Split(dataSourceNames, ";")
 	db := &DB{pdbs: make([]*pgxpool.Pool, len(conns))}
 
@@ -53,15 +59,23 @@ func ConnectByDataSourceNames(ctx context.Context, dataSourceNames string) (*DB,
 			return fmt.Errorf("parse config: %w", err)
 		}
 
+		cfg.ConnConfig.Tracer = tracer
+
 		db.pdbs[i], err = pgxpool.NewWithConfig(ctx, cfg)
+
 		if err != nil {
 			return fmt.Errorf("create connection pool: %w", err)
 		}
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+		defer cancel()
+
 		err = db.pdbs[i].Ping(ctx)
 		if err != nil {
 			return fmt.Errorf("cant ping connection pool: %w", err)
 		}
-		log.Printf("Connected to postgres db number %d", i)
+
+		zap.S().Infof("Connected to postgres db number %d", i)
 
 		return nil
 	})

@@ -32,9 +32,9 @@ func TestCartService_AddItem(t *testing.T) {
 		{
 			name: "Check success cart add",
 			prepare: func(f *fields, args args) {
-				f.lomsService.GetStockInfoMock.Expect(ctx, uint32(args.sku.Sku_id)).Return(5, nil)
-				f.productService.GetProductMock.Expect(ctx, args.sku.Sku_id).Return(&domain.Product{}, nil)
-				f.repository.AddItemMock.Expect(args.userId, args.sku).Return(nil)
+				f.lomsService.GetStockInfoMock.Return(5, nil)
+				f.productService.GetProductMock.Return(&domain.Product{}, nil)
+				f.repository.AddItemMock.Return(nil)
 			},
 			args: args{
 				userId: 31337,
@@ -61,8 +61,8 @@ func TestCartService_AddItem(t *testing.T) {
 		{
 			name: "Check not enough error",
 			prepare: func(f *fields, args args) {
-				f.lomsService.GetStockInfoMock.Expect(ctx, uint32(args.sku.Sku_id)).Return(5, nil)
-				f.productService.GetProductMock.Expect(ctx, args.sku.Sku_id).Return(&domain.Product{}, nil)
+				f.lomsService.GetStockInfoMock.Return(5, nil)
+				f.productService.GetProductMock.Return(&domain.Product{}, nil)
 			},
 			args: args{
 				userId: 31337,
@@ -90,7 +90,7 @@ func TestCartService_AddItem(t *testing.T) {
 		{
 			name: "Adding an service to the cart with an invalid SKU ID",
 			prepare: func(f *fields, args args) {
-				f.productService.GetProductMock.Expect(ctx, args.sku.Sku_id).Return(nil, product2.ErrProductNotFound)
+				f.productService.GetProductMock.Return(nil, product2.ErrProductNotFound)
 			},
 			args: args{
 				userId: 31337,

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"route256.ozon.ru/project/cart/internal/domain"
 	"sync"
 )
@@ -18,7 +19,7 @@ func NewMemoryRepository() *Memory {
 	}
 }
 
-func (memory *Memory) AddItem(userId int64, item domain.Item) error {
+func (memory *Memory) AddItem(ctx context.Context, userId int64, item domain.Item) error {
 	memory.mu.Lock()
 	defer memory.mu.Unlock()
 
@@ -33,7 +34,7 @@ func (memory *Memory) AddItem(userId int64, item domain.Item) error {
 	return nil
 }
 
-func (memory *Memory) DeleteItem(userId int64, skuId int64) error {
+func (memory *Memory) DeleteItem(ctx context.Context, userId int64, skuId int64) error {
 	memory.mu.Lock()
 	defer memory.mu.Unlock()
 
@@ -42,7 +43,7 @@ func (memory *Memory) DeleteItem(userId int64, skuId int64) error {
 	return nil
 }
 
-func (memory *Memory) DeleteItemsByUserId(userId int64) error {
+func (memory *Memory) DeleteItemsByUserId(ctx context.Context, userId int64) error {
 	memory.mu.Lock()
 	defer memory.mu.Unlock()
 
@@ -51,7 +52,7 @@ func (memory *Memory) DeleteItemsByUserId(userId int64) error {
 	return nil
 }
 
-func (memory *Memory) GetItemsByUserId(userId int64) (domain.ItemsMap, error) {
+func (memory *Memory) GetItemsByUserId(ctx context.Context, userId int64) (domain.ItemsMap, error) {
 	memory.mu.RLock()
 	defer memory.mu.RUnlock()
 

@@ -17,6 +17,8 @@ type Config struct {
 	LomsDbSlaveHost           string   `env:"POSTGRES_DB_SLAVE_HOST, default=localhost:5433"`
 	LomsKafkaBrokers          []string `env:"KAFKA_BROKERS, default=localhost:9091,localhost:9092,localhost:9093"`
 	LomsKafkaOrderStatusTopic string   `env:"KAFKA_TOPIC_NAME, default=loms.order-events"`
+	LogLevel                  string   `env:"LOMS_LOG_LEVEL, default=debug"`
+	TracerUrl                 string   `env:"TRACER_URL, default=http://localhost:14268/api/traces"`
 }
 
 func GetConfig(ctx context.Context) (*Config, error) {

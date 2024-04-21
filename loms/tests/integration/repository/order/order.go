@@ -54,7 +54,7 @@ func (t *OrderPgRepositoryTestSuite) SetupSuite() {
 	lomsConfig, err := config.GetConfig(ctx)
 	require.NoError(t.T(), err)
 
-	dbPool, err := pgs.ConnectToPgsDb(ctx, lomsConfig, true)
+	dbPool, err := pgs.ConnectToPgsDb(ctx, lomsConfig, true, nil)
 	require.NoError(t.T(), err)
 
 	repo := order_pgs_repository.NewOrderPgsRepository(dbPool)

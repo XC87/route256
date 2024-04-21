@@ -25,7 +25,7 @@ func TestService_OrderInfo(t *testing.T) {
 			name:    "Valid Order ID",
 			orderID: 1,
 			mockSetup: func(f *fields, orderID int64) {
-				f.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(&model.Order{}, nil)
+				f.mockOrderRepository.OrderInfoMock.Return(&model.Order{}, nil)
 			},
 			expectedError: nil,
 		},
@@ -40,7 +40,7 @@ func TestService_OrderInfo(t *testing.T) {
 			name:    "Order not found",
 			orderID: 1,
 			mockSetup: func(f *fields, orderID int64) {
-				f.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(&model.Order{}, ErrOrderNotFound)
+				f.mockOrderRepository.OrderInfoMock.Return(&model.Order{}, ErrOrderNotFound)
 			},
 			expectedError: ErrOrderNotFound,
 		},

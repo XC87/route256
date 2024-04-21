@@ -2,12 +2,13 @@ FROM golang:1.22-alpine as builder
 
 WORKDIR /app
 
-COPY go.mod go.mod
-COPY go.sum go.sum
+COPY notifier/go.mod go.mod
+COPY notifier/go.sum go.sum
+COPY ./pkg/ ../pkg
 
 RUN go mod download
 
-COPY . .
+COPY ./notifier/ .
 
 RUN go build -o bin/notifier ./cmd/notifier
 
