@@ -5,7 +5,6 @@ import (
 	"go.uber.org/zap"
 	"log"
 	"net/http"
-	//_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"route256.ozon.ru/pkg/logger"
