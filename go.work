@@ -4,4 +4,7 @@ use (
 	./cart
 	./loms
 	./notifier
+	./pkg/tracer
+	./pkg/metrics
+	./pkg/logger
 )

@@ -30,12 +30,12 @@ func TestService_OrderCreate(t *testing.T) {
 				Items:  []model.Item{{SKU: 2, Count: 5}},
 			},
 			mockSetup: func(f *fields, order *model.Order) {
-				f.mockStockRepository.GetCountBySkuMock.Expect(ctx, order.Items[0].SKU).Return(1, nil)
-				f.mockStockRepository.GetBySkuMock.Expect(ctx, order.Items[0].SKU).Return(&model.ProductStock{SKU: order.Items[0].SKU, TotalCount: 5, Reserved: 0}, nil)
-				f.mockStockRepository.ReserveMock.Expect(ctx, order.Items).Return(nil)
+				f.mockStockRepository.GetCountBySkuMock.Return(1, nil)
+				f.mockStockRepository.GetBySkuMock.Return(&model.ProductStock{SKU: order.Items[0].SKU, TotalCount: 5, Reserved: 0}, nil)
+				f.mockStockRepository.ReserveMock.Return(nil)
 
-				f.mockOrderRepository.OrderCreateMock.Expect(ctx, order).Return(1, nil)
-				f.mockOrderRepository.OrderUpdateMock.Expect(ctx, order).Return(nil)
+				f.mockOrderRepository.OrderCreateMock.Return(1, nil)
+				f.mockOrderRepository.OrderUpdateMock.Return(nil)
 
 				f.mockEventManager.TriggerMock.Return(nil)
 
@@ -50,11 +50,11 @@ func TestService_OrderCreate(t *testing.T) {
 				Items:  []model.Item{{SKU: 2, Count: 55}},
 			},
 			mockSetup: func(f *fields, order *model.Order) {
-				f.mockStockRepository.GetCountBySkuMock.Expect(ctx, order.Items[0].SKU).Return(1, nil)
+				f.mockStockRepository.GetCountBySkuMock.Return(1, nil)
 				f.mockStockRepository.GetBySkuMock.Expect(ctx, order.Items[0].SKU).Return(&model.ProductStock{SKU: order.Items[0].SKU, TotalCount: 5, Reserved: 0}, nil)
 
-				f.mockOrderRepository.OrderCreateMock.Expect(ctx, order).Return(1, nil)
-				f.mockOrderRepository.OrderUpdateMock.Expect(ctx, order).Return(nil)
+				f.mockOrderRepository.OrderCreateMock.Return(1, nil)
+				f.mockOrderRepository.OrderUpdateMock.Return(nil)
 
 				f.mockEventManager.TriggerMock.Return(nil)
 

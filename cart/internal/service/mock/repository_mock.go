@@ -5,6 +5,7 @@ package mock
 //go:generate minimock -i route256.ozon.ru/project/cart/internal/service.Repository -o repository_mock.go -n RepositoryMock -p mock
 
 import (
+	"context"
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"
@@ -18,26 +19,26 @@ type RepositoryMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
-	funcAddItem          func(userId int64, item domain.Item) (err error)
-	inspectFuncAddItem   func(userId int64, item domain.Item)
+	funcAddItem          func(ctx context.Context, userId int64, item domain.Item) (err error)
+	inspectFuncAddItem   func(ctx context.Context, userId int64, item domain.Item)
 	afterAddItemCounter  uint64
 	beforeAddItemCounter uint64
 	AddItemMock          mRepositoryMockAddItem
 
-	funcDeleteItem          func(userId int64, skuId int64) (err error)
-	inspectFuncDeleteItem   func(userId int64, skuId int64)
+	funcDeleteItem          func(ctx context.Context, userId int64, skuId int64) (err error)
+	inspectFuncDeleteItem   func(ctx context.Context, userId int64, skuId int64)
 	afterDeleteItemCounter  uint64
 	beforeDeleteItemCounter uint64
 	DeleteItemMock          mRepositoryMockDeleteItem
 
-	funcDeleteItemsByUserId          func(userId int64) (err error)
-	inspectFuncDeleteItemsByUserId   func(userId int64)
+	funcDeleteItemsByUserId          func(ctx context.Context, userId int64) (err error)
+	inspectFuncDeleteItemsByUserId   func(ctx context.Context, userId int64)
 	afterDeleteItemsByUserIdCounter  uint64
 	beforeDeleteItemsByUserIdCounter uint64
 	DeleteItemsByUserIdMock          mRepositoryMockDeleteItemsByUserId
 
-	funcGetItemsByUserId          func(userId int64) (i1 domain.ItemsMap, err error)
-	inspectFuncGetItemsByUserId   func(userId int64)
+	funcGetItemsByUserId          func(ctx context.Context, userId int64) (i1 domain.ItemsMap, err error)
+	inspectFuncGetItemsByUserId   func(ctx context.Context, userId int64)
 	afterGetItemsByUserIdCounter  uint64
 	beforeGetItemsByUserIdCounter uint64
 	GetItemsByUserIdMock          mRepositoryMockGetItemsByUserId
@@ -87,6 +88,7 @@ type RepositoryMockAddItemExpectation struct {
 
 // RepositoryMockAddItemParams contains parameters of the Repository.AddItem
 type RepositoryMockAddItemParams struct {
+	ctx    context.Context
 	userId int64
 	item   domain.Item
 }
@@ -97,7 +99,7 @@ type RepositoryMockAddItemResults struct {
 }
 
 // Expect sets up expected params for Repository.AddItem
-func (mmAddItem *mRepositoryMockAddItem) Expect(userId int64, item domain.Item) *mRepositoryMockAddItem {
+func (mmAddItem *mRepositoryMockAddItem) Expect(ctx context.Context, userId int64, item domain.Item) *mRepositoryMockAddItem {
 	if mmAddItem.mock.funcAddItem != nil {
 		mmAddItem.mock.t.Fatalf("RepositoryMock.AddItem mock is already set by Set")
 	}
@@ -106,7 +108,7 @@ func (mmAddItem *mRepositoryMockAddItem) Expect(userId int64, item domain.Item) 
 		mmAddItem.defaultExpectation = &RepositoryMockAddItemExpectation{}
 	}
 
-	mmAddItem.defaultExpectation.params = &RepositoryMockAddItemParams{userId, item}
+	mmAddItem.defaultExpectation.params = &RepositoryMockAddItemParams{ctx, userId, item}
 	for _, e := range mmAddItem.expectations {
 		if minimock.Equal(e.params, mmAddItem.defaultExpectation.params) {
 			mmAddItem.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmAddItem.defaultExpectation.params)
@@ -117,7 +119,7 @@ func (mmAddItem *mRepositoryMockAddItem) Expect(userId int64, item domain.Item) 
 }
 
 // Inspect accepts an inspector function that has same arguments as the Repository.AddItem
-func (mmAddItem *mRepositoryMockAddItem) Inspect(f func(userId int64, item domain.Item)) *mRepositoryMockAddItem {
+func (mmAddItem *mRepositoryMockAddItem) Inspect(f func(ctx context.Context, userId int64, item domain.Item)) *mRepositoryMockAddItem {
 	if mmAddItem.mock.inspectFuncAddItem != nil {
 		mmAddItem.mock.t.Fatalf("Inspect function is already set for RepositoryMock.AddItem")
 	}
@@ -141,7 +143,7 @@ func (mmAddItem *mRepositoryMockAddItem) Return(err error) *RepositoryMock {
 }
 
 // Set uses given function f to mock the Repository.AddItem method
-func (mmAddItem *mRepositoryMockAddItem) Set(f func(userId int64, item domain.Item) (err error)) *RepositoryMock {
+func (mmAddItem *mRepositoryMockAddItem) Set(f func(ctx context.Context, userId int64, item domain.Item) (err error)) *RepositoryMock {
 	if mmAddItem.defaultExpectation != nil {
 		mmAddItem.mock.t.Fatalf("Default expectation is already set for the Repository.AddItem method")
 	}
@@ -156,14 +158,14 @@ func (mmAddItem *mRepositoryMockAddItem) Set(f func(userId int64, item domain.It
 
 // When sets expectation for the Repository.AddItem which will trigger the result defined by the following
 // Then helper
-func (mmAddItem *mRepositoryMockAddItem) When(userId int64, item domain.Item) *RepositoryMockAddItemExpectation {
+func (mmAddItem *mRepositoryMockAddItem) When(ctx context.Context, userId int64, item domain.Item) *RepositoryMockAddItemExpectation {
 	if mmAddItem.mock.funcAddItem != nil {
 		mmAddItem.mock.t.Fatalf("RepositoryMock.AddItem mock is already set by Set")
 	}
 
 	expectation := &RepositoryMockAddItemExpectation{
 		mock:   mmAddItem.mock,
-		params: &RepositoryMockAddItemParams{userId, item},
+		params: &RepositoryMockAddItemParams{ctx, userId, item},
 	}
 	mmAddItem.expectations = append(mmAddItem.expectations, expectation)
 	return expectation
@@ -176,15 +178,15 @@ func (e *RepositoryMockAddItemExpectation) Then(err error) *RepositoryMock {
 }
 
 // AddItem implements service.Repository
-func (mmAddItem *RepositoryMock) AddItem(userId int64, item domain.Item) (err error) {
+func (mmAddItem *RepositoryMock) AddItem(ctx context.Context, userId int64, item domain.Item) (err error) {
 	mm_atomic.AddUint64(&mmAddItem.beforeAddItemCounter, 1)
 	defer mm_atomic.AddUint64(&mmAddItem.afterAddItemCounter, 1)
 
 	if mmAddItem.inspectFuncAddItem != nil {
-		mmAddItem.inspectFuncAddItem(userId, item)
+		mmAddItem.inspectFuncAddItem(ctx, userId, item)
 	}
 
-	mm_params := RepositoryMockAddItemParams{userId, item}
+	mm_params := RepositoryMockAddItemParams{ctx, userId, item}
 
 	// Record call args
 	mmAddItem.AddItemMock.mutex.Lock()
@@ -201,7 +203,7 @@ func (mmAddItem *RepositoryMock) AddItem(userId int64, item domain.Item) (err er
 	if mmAddItem.AddItemMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmAddItem.AddItemMock.defaultExpectation.Counter, 1)
 		mm_want := mmAddItem.AddItemMock.defaultExpectation.params
-		mm_got := RepositoryMockAddItemParams{userId, item}
+		mm_got := RepositoryMockAddItemParams{ctx, userId, item}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmAddItem.t.Errorf("RepositoryMock.AddItem got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -213,9 +215,9 @@ func (mmAddItem *RepositoryMock) AddItem(userId int64, item domain.Item) (err er
 		return (*mm_results).err
 	}
 	if mmAddItem.funcAddItem != nil {
-		return mmAddItem.funcAddItem(userId, item)
+		return mmAddItem.funcAddItem(ctx, userId, item)
 	}
-	mmAddItem.t.Fatalf("Unexpected call to RepositoryMock.AddItem. %v %v", userId, item)
+	mmAddItem.t.Fatalf("Unexpected call to RepositoryMock.AddItem. %v %v %v", ctx, userId, item)
 	return
 }
 
@@ -303,6 +305,7 @@ type RepositoryMockDeleteItemExpectation struct {
 
 // RepositoryMockDeleteItemParams contains parameters of the Repository.DeleteItem
 type RepositoryMockDeleteItemParams struct {
+	ctx    context.Context
 	userId int64
 	skuId  int64
 }
@@ -313,7 +316,7 @@ type RepositoryMockDeleteItemResults struct {
 }
 
 // Expect sets up expected params for Repository.DeleteItem
-func (mmDeleteItem *mRepositoryMockDeleteItem) Expect(userId int64, skuId int64) *mRepositoryMockDeleteItem {
+func (mmDeleteItem *mRepositoryMockDeleteItem) Expect(ctx context.Context, userId int64, skuId int64) *mRepositoryMockDeleteItem {
 	if mmDeleteItem.mock.funcDeleteItem != nil {
 		mmDeleteItem.mock.t.Fatalf("RepositoryMock.DeleteItem mock is already set by Set")
 	}
@@ -322,7 +325,7 @@ func (mmDeleteItem *mRepositoryMockDeleteItem) Expect(userId int64, skuId int64)
 		mmDeleteItem.defaultExpectation = &RepositoryMockDeleteItemExpectation{}
 	}
 
-	mmDeleteItem.defaultExpectation.params = &RepositoryMockDeleteItemParams{userId, skuId}
+	mmDeleteItem.defaultExpectation.params = &RepositoryMockDeleteItemParams{ctx, userId, skuId}
 	for _, e := range mmDeleteItem.expectations {
 		if minimock.Equal(e.params, mmDeleteItem.defaultExpectation.params) {
 			mmDeleteItem.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmDeleteItem.defaultExpectation.params)
@@ -333,7 +336,7 @@ func (mmDeleteItem *mRepositoryMockDeleteItem) Expect(userId int64, skuId int64)
 }
 
 // Inspect accepts an inspector function that has same arguments as the Repository.DeleteItem
-func (mmDeleteItem *mRepositoryMockDeleteItem) Inspect(f func(userId int64, skuId int64)) *mRepositoryMockDeleteItem {
+func (mmDeleteItem *mRepositoryMockDeleteItem) Inspect(f func(ctx context.Context, userId int64, skuId int64)) *mRepositoryMockDeleteItem {
 	if mmDeleteItem.mock.inspectFuncDeleteItem != nil {
 		mmDeleteItem.mock.t.Fatalf("Inspect function is already set for RepositoryMock.DeleteItem")
 	}
@@ -357,7 +360,7 @@ func (mmDeleteItem *mRepositoryMockDeleteItem) Return(err error) *RepositoryMock
 }
 
 // Set uses given function f to mock the Repository.DeleteItem method
-func (mmDeleteItem *mRepositoryMockDeleteItem) Set(f func(userId int64, skuId int64) (err error)) *RepositoryMock {
+func (mmDeleteItem *mRepositoryMockDeleteItem) Set(f func(ctx context.Context, userId int64, skuId int64) (err error)) *RepositoryMock {
 	if mmDeleteItem.defaultExpectation != nil {
 		mmDeleteItem.mock.t.Fatalf("Default expectation is already set for the Repository.DeleteItem method")
 	}
@@ -372,14 +375,14 @@ func (mmDeleteItem *mRepositoryMockDeleteItem) Set(f func(userId int64, skuId in
 
 // When sets expectation for the Repository.DeleteItem which will trigger the result defined by the following
 // Then helper
-func (mmDeleteItem *mRepositoryMockDeleteItem) When(userId int64, skuId int64) *RepositoryMockDeleteItemExpectation {
+func (mmDeleteItem *mRepositoryMockDeleteItem) When(ctx context.Context, userId int64, skuId int64) *RepositoryMockDeleteItemExpectation {
 	if mmDeleteItem.mock.funcDeleteItem != nil {
 		mmDeleteItem.mock.t.Fatalf("RepositoryMock.DeleteItem mock is already set by Set")
 	}
 
 	expectation := &RepositoryMockDeleteItemExpectation{
 		mock:   mmDeleteItem.mock,
-		params: &RepositoryMockDeleteItemParams{userId, skuId},
+		params: &RepositoryMockDeleteItemParams{ctx, userId, skuId},
 	}
 	mmDeleteItem.expectations = append(mmDeleteItem.expectations, expectation)
 	return expectation
@@ -392,15 +395,15 @@ func (e *RepositoryMockDeleteItemExpectation) Then(err error) *RepositoryMock {
 }
 
 // DeleteItem implements service.Repository
-func (mmDeleteItem *RepositoryMock) DeleteItem(userId int64, skuId int64) (err error) {
+func (mmDeleteItem *RepositoryMock) DeleteItem(ctx context.Context, userId int64, skuId int64) (err error) {
 	mm_atomic.AddUint64(&mmDeleteItem.beforeDeleteItemCounter, 1)
 	defer mm_atomic.AddUint64(&mmDeleteItem.afterDeleteItemCounter, 1)
 
 	if mmDeleteItem.inspectFuncDeleteItem != nil {
-		mmDeleteItem.inspectFuncDeleteItem(userId, skuId)
+		mmDeleteItem.inspectFuncDeleteItem(ctx, userId, skuId)
 	}
 
-	mm_params := RepositoryMockDeleteItemParams{userId, skuId}
+	mm_params := RepositoryMockDeleteItemParams{ctx, userId, skuId}
 
 	// Record call args
 	mmDeleteItem.DeleteItemMock.mutex.Lock()
@@ -417,7 +420,7 @@ func (mmDeleteItem *RepositoryMock) DeleteItem(userId int64, skuId int64) (err e
 	if mmDeleteItem.DeleteItemMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmDeleteItem.DeleteItemMock.defaultExpectation.Counter, 1)
 		mm_want := mmDeleteItem.DeleteItemMock.defaultExpectation.params
-		mm_got := RepositoryMockDeleteItemParams{userId, skuId}
+		mm_got := RepositoryMockDeleteItemParams{ctx, userId, skuId}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmDeleteItem.t.Errorf("RepositoryMock.DeleteItem got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -429,9 +432,9 @@ func (mmDeleteItem *RepositoryMock) DeleteItem(userId int64, skuId int64) (err e
 		return (*mm_results).err
 	}
 	if mmDeleteItem.funcDeleteItem != nil {
-		return mmDeleteItem.funcDeleteItem(userId, skuId)
+		return mmDeleteItem.funcDeleteItem(ctx, userId, skuId)
 	}
-	mmDeleteItem.t.Fatalf("Unexpected call to RepositoryMock.DeleteItem. %v %v", userId, skuId)
+	mmDeleteItem.t.Fatalf("Unexpected call to RepositoryMock.DeleteItem. %v %v %v", ctx, userId, skuId)
 	return
 }
 
@@ -519,6 +522,7 @@ type RepositoryMockDeleteItemsByUserIdExpectation struct {
 
 // RepositoryMockDeleteItemsByUserIdParams contains parameters of the Repository.DeleteItemsByUserId
 type RepositoryMockDeleteItemsByUserIdParams struct {
+	ctx    context.Context
 	userId int64
 }
 
@@ -528,7 +532,7 @@ type RepositoryMockDeleteItemsByUserIdResults struct {
 }
 
 // Expect sets up expected params for Repository.DeleteItemsByUserId
-func (mmDeleteItemsByUserId *mRepositoryMockDeleteItemsByUserId) Expect(userId int64) *mRepositoryMockDeleteItemsByUserId {
+func (mmDeleteItemsByUserId *mRepositoryMockDeleteItemsByUserId) Expect(ctx context.Context, userId int64) *mRepositoryMockDeleteItemsByUserId {
 	if mmDeleteItemsByUserId.mock.funcDeleteItemsByUserId != nil {
 		mmDeleteItemsByUserId.mock.t.Fatalf("RepositoryMock.DeleteItemsByUserId mock is already set by Set")
 	}
@@ -537,7 +541,7 @@ func (mmDeleteItemsByUserId *mRepositoryMockDeleteItemsByUserId) Expect(userId i
 		mmDeleteItemsByUserId.defaultExpectation = &RepositoryMockDeleteItemsByUserIdExpectation{}
 	}
 
-	mmDeleteItemsByUserId.defaultExpectation.params = &RepositoryMockDeleteItemsByUserIdParams{userId}
+	mmDeleteItemsByUserId.defaultExpectation.params = &RepositoryMockDeleteItemsByUserIdParams{ctx, userId}
 	for _, e := range mmDeleteItemsByUserId.expectations {
 		if minimock.Equal(e.params, mmDeleteItemsByUserId.defaultExpectation.params) {
 			mmDeleteItemsByUserId.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmDeleteItemsByUserId.defaultExpectation.params)
@@ -548,7 +552,7 @@ func (mmDeleteItemsByUserId *mRepositoryMockDeleteItemsByUserId) Expect(userId i
 }
 
 // Inspect accepts an inspector function that has same arguments as the Repository.DeleteItemsByUserId
-func (mmDeleteItemsByUserId *mRepositoryMockDeleteItemsByUserId) Inspect(f func(userId int64)) *mRepositoryMockDeleteItemsByUserId {
+func (mmDeleteItemsByUserId *mRepositoryMockDeleteItemsByUserId) Inspect(f func(ctx context.Context, userId int64)) *mRepositoryMockDeleteItemsByUserId {
 	if mmDeleteItemsByUserId.mock.inspectFuncDeleteItemsByUserId != nil {
 		mmDeleteItemsByUserId.mock.t.Fatalf("Inspect function is already set for RepositoryMock.DeleteItemsByUserId")
 	}
@@ -572,7 +576,7 @@ func (mmDeleteItemsByUserId *mRepositoryMockDeleteItemsByUserId) Return(err erro
 }
 
 // Set uses given function f to mock the Repository.DeleteItemsByUserId method
-func (mmDeleteItemsByUserId *mRepositoryMockDeleteItemsByUserId) Set(f func(userId int64) (err error)) *RepositoryMock {
+func (mmDeleteItemsByUserId *mRepositoryMockDeleteItemsByUserId) Set(f func(ctx context.Context, userId int64) (err error)) *RepositoryMock {
 	if mmDeleteItemsByUserId.defaultExpectation != nil {
 		mmDeleteItemsByUserId.mock.t.Fatalf("Default expectation is already set for the Repository.DeleteItemsByUserId method")
 	}
@@ -587,14 +591,14 @@ func (mmDeleteItemsByUserId *mRepositoryMockDeleteItemsByUserId) Set(f func(user
 
 // When sets expectation for the Repository.DeleteItemsByUserId which will trigger the result defined by the following
 // Then helper
-func (mmDeleteItemsByUserId *mRepositoryMockDeleteItemsByUserId) When(userId int64) *RepositoryMockDeleteItemsByUserIdExpectation {
+func (mmDeleteItemsByUserId *mRepositoryMockDeleteItemsByUserId) When(ctx context.Context, userId int64) *RepositoryMockDeleteItemsByUserIdExpectation {
 	if mmDeleteItemsByUserId.mock.funcDeleteItemsByUserId != nil {
 		mmDeleteItemsByUserId.mock.t.Fatalf("RepositoryMock.DeleteItemsByUserId mock is already set by Set")
 	}
 
 	expectation := &RepositoryMockDeleteItemsByUserIdExpectation{
 		mock:   mmDeleteItemsByUserId.mock,
-		params: &RepositoryMockDeleteItemsByUserIdParams{userId},
+		params: &RepositoryMockDeleteItemsByUserIdParams{ctx, userId},
 	}
 	mmDeleteItemsByUserId.expectations = append(mmDeleteItemsByUserId.expectations, expectation)
 	return expectation
@@ -607,15 +611,15 @@ func (e *RepositoryMockDeleteItemsByUserIdExpectation) Then(err error) *Reposito
 }
 
 // DeleteItemsByUserId implements service.Repository
-func (mmDeleteItemsByUserId *RepositoryMock) DeleteItemsByUserId(userId int64) (err error) {
+func (mmDeleteItemsByUserId *RepositoryMock) DeleteItemsByUserId(ctx context.Context, userId int64) (err error) {
 	mm_atomic.AddUint64(&mmDeleteItemsByUserId.beforeDeleteItemsByUserIdCounter, 1)
 	defer mm_atomic.AddUint64(&mmDeleteItemsByUserId.afterDeleteItemsByUserIdCounter, 1)
 
 	if mmDeleteItemsByUserId.inspectFuncDeleteItemsByUserId != nil {
-		mmDeleteItemsByUserId.inspectFuncDeleteItemsByUserId(userId)
+		mmDeleteItemsByUserId.inspectFuncDeleteItemsByUserId(ctx, userId)
 	}
 
-	mm_params := RepositoryMockDeleteItemsByUserIdParams{userId}
+	mm_params := RepositoryMockDeleteItemsByUserIdParams{ctx, userId}
 
 	// Record call args
 	mmDeleteItemsByUserId.DeleteItemsByUserIdMock.mutex.Lock()
@@ -632,7 +636,7 @@ func (mmDeleteItemsByUserId *RepositoryMock) DeleteItemsByUserId(userId int64) (
 	if mmDeleteItemsByUserId.DeleteItemsByUserIdMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmDeleteItemsByUserId.DeleteItemsByUserIdMock.defaultExpectation.Counter, 1)
 		mm_want := mmDeleteItemsByUserId.DeleteItemsByUserIdMock.defaultExpectation.params
-		mm_got := RepositoryMockDeleteItemsByUserIdParams{userId}
+		mm_got := RepositoryMockDeleteItemsByUserIdParams{ctx, userId}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmDeleteItemsByUserId.t.Errorf("RepositoryMock.DeleteItemsByUserId got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -644,9 +648,9 @@ func (mmDeleteItemsByUserId *RepositoryMock) DeleteItemsByUserId(userId int64) (
 		return (*mm_results).err
 	}
 	if mmDeleteItemsByUserId.funcDeleteItemsByUserId != nil {
-		return mmDeleteItemsByUserId.funcDeleteItemsByUserId(userId)
+		return mmDeleteItemsByUserId.funcDeleteItemsByUserId(ctx, userId)
 	}
-	mmDeleteItemsByUserId.t.Fatalf("Unexpected call to RepositoryMock.DeleteItemsByUserId. %v", userId)
+	mmDeleteItemsByUserId.t.Fatalf("Unexpected call to RepositoryMock.DeleteItemsByUserId. %v %v", ctx, userId)
 	return
 }
 
@@ -734,6 +738,7 @@ type RepositoryMockGetItemsByUserIdExpectation struct {
 
 // RepositoryMockGetItemsByUserIdParams contains parameters of the Repository.GetItemsByUserId
 type RepositoryMockGetItemsByUserIdParams struct {
+	ctx    context.Context
 	userId int64
 }
 
@@ -744,7 +749,7 @@ type RepositoryMockGetItemsByUserIdResults struct {
 }
 
 // Expect sets up expected params for Repository.GetItemsByUserId
-func (mmGetItemsByUserId *mRepositoryMockGetItemsByUserId) Expect(userId int64) *mRepositoryMockGetItemsByUserId {
+func (mmGetItemsByUserId *mRepositoryMockGetItemsByUserId) Expect(ctx context.Context, userId int64) *mRepositoryMockGetItemsByUserId {
 	if mmGetItemsByUserId.mock.funcGetItemsByUserId != nil {
 		mmGetItemsByUserId.mock.t.Fatalf("RepositoryMock.GetItemsByUserId mock is already set by Set")
 	}
@@ -753,7 +758,7 @@ func (mmGetItemsByUserId *mRepositoryMockGetItemsByUserId) Expect(userId int64) 
 		mmGetItemsByUserId.defaultExpectation = &RepositoryMockGetItemsByUserIdExpectation{}
 	}
 
-	mmGetItemsByUserId.defaultExpectation.params = &RepositoryMockGetItemsByUserIdParams{userId}
+	mmGetItemsByUserId.defaultExpectation.params = &RepositoryMockGetItemsByUserIdParams{ctx, userId}
 	for _, e := range mmGetItemsByUserId.expectations {
 		if minimock.Equal(e.params, mmGetItemsByUserId.defaultExpectation.params) {
 			mmGetItemsByUserId.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetItemsByUserId.defaultExpectation.params)
@@ -764,7 +769,7 @@ func (mmGetItemsByUserId *mRepositoryMockGetItemsByUserId) Expect(userId int64) 
 }
 
 // Inspect accepts an inspector function that has same arguments as the Repository.GetItemsByUserId
-func (mmGetItemsByUserId *mRepositoryMockGetItemsByUserId) Inspect(f func(userId int64)) *mRepositoryMockGetItemsByUserId {
+func (mmGetItemsByUserId *mRepositoryMockGetItemsByUserId) Inspect(f func(ctx context.Context, userId int64)) *mRepositoryMockGetItemsByUserId {
 	if mmGetItemsByUserId.mock.inspectFuncGetItemsByUserId != nil {
 		mmGetItemsByUserId.mock.t.Fatalf("Inspect function is already set for RepositoryMock.GetItemsByUserId")
 	}
@@ -788,7 +793,7 @@ func (mmGetItemsByUserId *mRepositoryMockGetItemsByUserId) Return(i1 domain.Item
 }
 
 // Set uses given function f to mock the Repository.GetItemsByUserId method
-func (mmGetItemsByUserId *mRepositoryMockGetItemsByUserId) Set(f func(userId int64) (i1 domain.ItemsMap, err error)) *RepositoryMock {
+func (mmGetItemsByUserId *mRepositoryMockGetItemsByUserId) Set(f func(ctx context.Context, userId int64) (i1 domain.ItemsMap, err error)) *RepositoryMock {
 	if mmGetItemsByUserId.defaultExpectation != nil {
 		mmGetItemsByUserId.mock.t.Fatalf("Default expectation is already set for the Repository.GetItemsByUserId method")
 	}
@@ -803,14 +808,14 @@ func (mmGetItemsByUserId *mRepositoryMockGetItemsByUserId) Set(f func(userId int
 
 // When sets expectation for the Repository.GetItemsByUserId which will trigger the result defined by the following
 // Then helper
-func (mmGetItemsByUserId *mRepositoryMockGetItemsByUserId) When(userId int64) *RepositoryMockGetItemsByUserIdExpectation {
+func (mmGetItemsByUserId *mRepositoryMockGetItemsByUserId) When(ctx context.Context, userId int64) *RepositoryMockGetItemsByUserIdExpectation {
 	if mmGetItemsByUserId.mock.funcGetItemsByUserId != nil {
 		mmGetItemsByUserId.mock.t.Fatalf("RepositoryMock.GetItemsByUserId mock is already set by Set")
 	}
 
 	expectation := &RepositoryMockGetItemsByUserIdExpectation{
 		mock:   mmGetItemsByUserId.mock,
-		params: &RepositoryMockGetItemsByUserIdParams{userId},
+		params: &RepositoryMockGetItemsByUserIdParams{ctx, userId},
 	}
 	mmGetItemsByUserId.expectations = append(mmGetItemsByUserId.expectations, expectation)
 	return expectation
@@ -823,15 +828,15 @@ func (e *RepositoryMockGetItemsByUserIdExpectation) Then(i1 domain.ItemsMap, err
 }
 
 // GetItemsByUserId implements service.Repository
-func (mmGetItemsByUserId *RepositoryMock) GetItemsByUserId(userId int64) (i1 domain.ItemsMap, err error) {
+func (mmGetItemsByUserId *RepositoryMock) GetItemsByUserId(ctx context.Context, userId int64) (i1 domain.ItemsMap, err error) {
 	mm_atomic.AddUint64(&mmGetItemsByUserId.beforeGetItemsByUserIdCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetItemsByUserId.afterGetItemsByUserIdCounter, 1)
 
 	if mmGetItemsByUserId.inspectFuncGetItemsByUserId != nil {
-		mmGetItemsByUserId.inspectFuncGetItemsByUserId(userId)
+		mmGetItemsByUserId.inspectFuncGetItemsByUserId(ctx, userId)
 	}
 
-	mm_params := RepositoryMockGetItemsByUserIdParams{userId}
+	mm_params := RepositoryMockGetItemsByUserIdParams{ctx, userId}
 
 	// Record call args
 	mmGetItemsByUserId.GetItemsByUserIdMock.mutex.Lock()
@@ -848,7 +853,7 @@ func (mmGetItemsByUserId *RepositoryMock) GetItemsByUserId(userId int64) (i1 dom
 	if mmGetItemsByUserId.GetItemsByUserIdMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmGetItemsByUserId.GetItemsByUserIdMock.defaultExpectation.Counter, 1)
 		mm_want := mmGetItemsByUserId.GetItemsByUserIdMock.defaultExpectation.params
-		mm_got := RepositoryMockGetItemsByUserIdParams{userId}
+		mm_got := RepositoryMockGetItemsByUserIdParams{ctx, userId}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmGetItemsByUserId.t.Errorf("RepositoryMock.GetItemsByUserId got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -860,9 +865,9 @@ func (mmGetItemsByUserId *RepositoryMock) GetItemsByUserId(userId int64) (i1 dom
 		return (*mm_results).i1, (*mm_results).err
 	}
 	if mmGetItemsByUserId.funcGetItemsByUserId != nil {
-		return mmGetItemsByUserId.funcGetItemsByUserId(userId)
+		return mmGetItemsByUserId.funcGetItemsByUserId(ctx, userId)
 	}
-	mmGetItemsByUserId.t.Fatalf("Unexpected call to RepositoryMock.GetItemsByUserId. %v", userId)
+	mmGetItemsByUserId.t.Fatalf("Unexpected call to RepositoryMock.GetItemsByUserId. %v %v", ctx, userId)
 	return
 }
 

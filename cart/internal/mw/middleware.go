@@ -1,8 +1,9 @@
 package mw
 
 import (
-	"log"
+	"go.uber.org/zap"
 	"net/http"
+	"route256.ozon.ru/pkg/logger"
 )
 
 type MiddlewareChain func(http.HandlerFunc) http.HandlerFunc
@@ -22,7 +23,11 @@ func BuildMiddleware(handler http.HandlerFunc, middlewareList []MiddlewareChain)
 
 func LoggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("request: " + r.Method + " " + r.URL.Path)
+		if (r.URL.Path == "/health") || (r.URL.Path == "/metrics") {
+			next(w, r)
+			return
+		}
+		zap.L().With(logger.GetTraceFields(r.Context())...).Info("request: " + r.Method + " " + r.URL.Path)
 		next(w, r)
 	}
 }

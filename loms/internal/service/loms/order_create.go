@@ -2,10 +2,14 @@ package order_usecase
 
 import (
 	"context"
+	"go.opentelemetry.io/otel"
 	"route256.ozon.ru/project/loms/internal/model"
 )
 
 func (s *Service) OrderCreate(ctx context.Context, order *model.Order) (int64, error) {
+	ctx, span := otel.Tracer("default").Start(ctx, "OrderCreate")
+	defer span.End()
+
 	if order == nil || len(order.Items) == 0 {
 		return 0, ErrOrderInvalid
 	}
@@ -26,8 +30,10 @@ func (s *Service) OrderCreate(ctx context.Context, order *model.Order) (int64, e
 		return 0, ErrOrderCantReserve
 	}
 
+	_, span = otel.Tracer("default").Start(ctx, "orderюChangeStatus")
 	order.ChangeStatus(model.AwaitingPayment)
 	err = s.OrderRepository.OrderUpdate(ctx, order)
+	span.End()
 	if err != nil {
 		return 0, err
 	}
@@ -37,6 +43,9 @@ func (s *Service) OrderCreate(ctx context.Context, order *model.Order) (int64, e
 }
 
 func (s *Service) checkItemsExists(ctx context.Context, items []model.Item) error {
+	ctx, span := otel.Tracer("default").Start(ctx, "order.checkItemsExists")
+	defer span.End()
+
 	for _, item := range items {
 		_, err := s.StockRepository.GetCountBySku(ctx, item.SKU)
 		if err != nil {
@@ -47,6 +56,9 @@ func (s *Service) checkItemsExists(ctx context.Context, items []model.Item) erro
 }
 
 func (s *Service) checkAndReserveStock(ctx context.Context, order *model.Order) error {
+	ctx, span := otel.Tracer("default").Start(ctx, "order.checkAndReserveStock")
+	defer span.End()
+
 	err := checkIfCanReserve(s.StockRepository, order.Items)
 	if err != nil {
 		order.ChangeStatus(model.Failed)

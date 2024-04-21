@@ -37,14 +37,14 @@ func TestCartService_GetItemsByUserId(t *testing.T) {
 						Count:  want.Items[0].Count,
 					},
 				}
-				f.productService.GetProductListMock.Expect(ctx, []int64{want.Items[0].SkuId}).Return([]*domain.Product{
+				f.productService.GetProductListMock.Return([]*domain.Product{
 					{
 						Sku:   want.Items[0].SkuId,
 						Name:  want.Items[0].Name,
 						Price: want.Items[0].Price,
 					},
 				}, nil)
-				f.repository.GetItemsByUserIdMock.Expect(args.userId).Return(maps, nil)
+				f.repository.GetItemsByUserIdMock.Return(maps, nil)
 			},
 			args: args{
 				userId: 31337,
@@ -65,7 +65,7 @@ func TestCartService_GetItemsByUserId(t *testing.T) {
 		{
 			name: "Successful get empty cart",
 			prepare: func(f *fields, args args, want *CartResponse) {
-				f.repository.GetItemsByUserIdMock.Expect(args.userId).Return(domain.ItemsMap{}, nil)
+				f.repository.GetItemsByUserIdMock.Return(domain.ItemsMap{}, nil)
 			},
 			args: args{
 				userId: 31337,

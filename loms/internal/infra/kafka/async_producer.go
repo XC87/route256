@@ -3,7 +3,10 @@ package async_producer
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/dnwe/otelsarama"
+	"go.opentelemetry.io/otel"
+	"go.uber.org/zap"
+	"route256.ozon.ru/pkg/logger"
 	"route256.ozon.ru/project/loms/internal/model"
 	"sync"
 	"time"
@@ -28,6 +31,7 @@ func (p *AsyncProducer) ProduceMessage(ctx context.Context, message *model.Kafka
 		},
 		Timestamp: time.Now(),
 	}
+	otel.GetTextMapPropagator().Inject(ctx, otelsarama.NewProducerMessageCarrier(msg))
 
 	select {
 	case <-ctx.Done():
@@ -43,6 +47,8 @@ func NewKafkaAsyncProducer(ctx context.Context, wg *sync.WaitGroup, brokers []st
 	if err != nil {
 		return nil, fmt.Errorf("NewSyncProducer failed: %w", err)
 	}
+
+	asyncProducer = otelsarama.WrapAsyncProducer(config, asyncProducer)
 
 	go func() {
 		<-ctx.Done()
@@ -70,14 +76,15 @@ func runKafkaSuccess(ctx context.Context, asyncProducer *AsyncProducer, wg *sync
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("Kafka success ctx closed")
+				zap.L().Info("Kafka success ctx closed")
 				return
 			case msg := <-successCh:
+				ctx = otel.GetTextMapPropagator().Extract(context.Background(), otelsarama.NewProducerMessageCarrier(msg))
 				if msg == nil {
-					log.Println("Kafka success chan closed")
+					zap.L().With(logger.GetTraceFields(ctx)...).Info("Kafka success chan closed")
 					return
 				}
-				log.Printf("Kafka success key: %q, partition: %d, offset: %d\n", msg.Key, msg.Partition, msg.Offset)
+				zap.L().With(logger.GetTraceFields(ctx)...).Sugar().Infof("Kafka success key: %q, partition: %d, offset: %d\n", msg.Key, msg.Partition, msg.Offset)
 			}
 		}
 	}()
@@ -92,14 +99,14 @@ func runKafkaErrors(ctx context.Context, asyncProducer *AsyncProducer, wg *sync.
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("Kafka error ctx closed")
+				zap.L().Info("Kafka error ctx closed")
 				return
 			case msgErr := <-errCh:
 				if msgErr == nil {
-					log.Println("Kafka error chan closed")
+					zap.L().Info("Kafka error chan closed")
 					return
 				}
-				log.Printf("Kafka error err %s, topic: %q, offset: %d\n", msgErr.Err, msgErr.Msg.Topic, msgErr.Msg.Offset)
+				zap.S().Infof("Kafka error err %s, topic: %q, offset: %d\n", msgErr.Err, msgErr.Msg.Topic, msgErr.Msg.Offset)
 			}
 		}
 	}()

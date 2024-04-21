@@ -14,7 +14,7 @@ func (h *Handler) DeleteItemsByUserId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.cartService.DeleteItemsByUserId(cartClearReq.UserId); err != nil {
+	if err := h.cartService.DeleteItemsByUserId(r.Context(), cartClearReq.UserId); err != nil {
 		http.Error(w, "cant delete cart", http.StatusInternalServerError)
 		return
 	}

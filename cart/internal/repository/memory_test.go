@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
@@ -11,8 +12,9 @@ import (
 func BenchmarkInMemoryStorage(b *testing.B) {
 	storage := NewMemoryRepository()
 	b.ResetTimer()
+	ctx := context.Background()
 	for i := 0; i < b.N; i++ {
-		storage.AddItem(123, domain.Item{
+		storage.AddItem(ctx, 123, domain.Item{
 			Sku_id: 773297411,
 			Count:  0,
 		})
@@ -28,6 +30,7 @@ func TestMemory_AddItem(t *testing.T) {
 		userId int64
 		sku    domain.Item
 	}
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		args    args
@@ -62,11 +65,11 @@ func TestMemory_AddItem(t *testing.T) {
 			t.Parallel()
 			userId := tt.args.userId
 			item := tt.args.sku
-			err := memory.AddItem(userId, item)
+			err := memory.AddItem(ctx, userId, item)
 
 			require.ErrorIs(t, err, tt.wantErr)
 
-			itemsMap, _ := memory.GetItemsByUserId(userId)
+			itemsMap, _ := memory.GetItemsByUserId(ctx, userId)
 			if itemsMap[item.Sku_id].Count != item.Count {
 				t.Errorf("Expected count to be %d, but got %d", item.Count, itemsMap[item.Sku_id].Count)
 			}
@@ -82,6 +85,7 @@ func TestMemory_DeleteItem(t *testing.T) {
 		userId int64
 		sku    domain.Item
 	}
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		args    args
@@ -98,7 +102,7 @@ func TestMemory_DeleteItem(t *testing.T) {
 				},
 			},
 			prepare: func(f *fields, args args) {
-				f.memoryRepository.AddItem(args.userId, args.sku)
+				f.memoryRepository.AddItem(ctx, args.userId, args.sku)
 			},
 			wantErr: nil,
 		},
@@ -112,7 +116,7 @@ func TestMemory_DeleteItem(t *testing.T) {
 				},
 			},
 			prepare: func(f *fields, args args) {
-				f.memoryRepository.AddItem(args.userId, args.sku)
+				f.memoryRepository.AddItem(ctx, args.userId, args.sku)
 			},
 			wantErr: nil,
 		},
@@ -129,10 +133,10 @@ func TestMemory_DeleteItem(t *testing.T) {
 			userId := tt.args.userId
 			item := tt.args.sku
 
-			err := memory.DeleteItem(tt.args.userId, tt.args.sku.Sku_id)
+			err := memory.DeleteItem(ctx, tt.args.userId, tt.args.sku.Sku_id)
 			require.ErrorIs(t, err, tt.wantErr)
 
-			itemsMap, _ := memory.GetItemsByUserId(userId)
+			itemsMap, _ := memory.GetItemsByUserId(ctx, userId)
 			if _, ok := itemsMap[item.Sku_id]; ok {
 				t.Errorf("Expected item to be deleted")
 			}
@@ -148,6 +152,7 @@ func TestMemory_DeleteItemsByUserId(t *testing.T) {
 		userId int64
 		sku    domain.Item
 	}
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		args    args
@@ -164,7 +169,7 @@ func TestMemory_DeleteItemsByUserId(t *testing.T) {
 				},
 			},
 			prepare: func(f *fields, args args) {
-				f.memoryRepository.AddItem(args.userId, args.sku)
+				f.memoryRepository.AddItem(ctx, args.userId, args.sku)
 			},
 			wantErr: nil,
 		},
@@ -178,7 +183,7 @@ func TestMemory_DeleteItemsByUserId(t *testing.T) {
 				},
 			},
 			prepare: func(f *fields, args args) {
-				f.memoryRepository.AddItem(args.userId, args.sku)
+				f.memoryRepository.AddItem(ctx, args.userId, args.sku)
 			},
 			wantErr: nil,
 		},
@@ -193,10 +198,10 @@ func TestMemory_DeleteItemsByUserId(t *testing.T) {
 			}
 			tt.prepare(&f, tt.args)
 
-			err := memory.DeleteItemsByUserId(tt.args.userId)
+			err := memory.DeleteItemsByUserId(ctx, tt.args.userId)
 			require.ErrorIs(t, err, tt.wantErr)
 
-			itemsMap, _ := memory.GetItemsByUserId(tt.args.userId)
+			itemsMap, _ := memory.GetItemsByUserId(ctx, tt.args.userId)
 			assert.Empty(t, itemsMap)
 		})
 	}
@@ -210,6 +215,7 @@ func TestMemory_GetItemsByUserId(t *testing.T) {
 		userId int64
 		sku    domain.Item
 	}
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		args    args
@@ -226,7 +232,7 @@ func TestMemory_GetItemsByUserId(t *testing.T) {
 				},
 			},
 			prepare: func(f *fields, args args) {
-				f.memoryRepository.AddItem(args.userId, args.sku)
+				f.memoryRepository.AddItem(ctx, args.userId, args.sku)
 			},
 			wantErr: nil,
 		},
@@ -240,7 +246,7 @@ func TestMemory_GetItemsByUserId(t *testing.T) {
 				},
 			},
 			prepare: func(f *fields, args args) {
-				f.memoryRepository.AddItem(args.userId, args.sku)
+				f.memoryRepository.AddItem(ctx, args.userId, args.sku)
 			},
 			wantErr: nil,
 		},
@@ -255,7 +261,7 @@ func TestMemory_GetItemsByUserId(t *testing.T) {
 			}
 			tt.prepare(&f, tt.args)
 
-			itemsMap, err := memory.GetItemsByUserId(tt.args.userId)
+			itemsMap, err := memory.GetItemsByUserId(ctx, tt.args.userId)
 			require.Equal(t, domain.ItemsMap{tt.args.sku.Sku_id: tt.args.sku}, itemsMap)
 			require.ErrorIs(t, err, tt.wantErr)
 		})

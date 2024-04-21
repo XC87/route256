@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/asaskevich/govalidator"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 	"strconv"
 )
@@ -29,7 +29,7 @@ func (h *Handler) GetItemsByUserId(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(status)
 	_, err = w.Write(jsonResponse)
 	if err != nil {
-		log.Println("something went wrong on writing the response:", err)
+		zap.L().Info("something went wrong on writing the response:", zap.Error(err))
 		return
 	}
 }

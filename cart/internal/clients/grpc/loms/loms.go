@@ -3,9 +3,12 @@ package loms
 import (
 	"context"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/contrib/propagators/jaeger"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"log"
+	"route256.ozon.ru/pkg/metrics"
 	"route256.ozon.ru/project/cart/internal/domain"
 	"route256.ozon.ru/project/cart/internal/service"
 	servicepb "route256.ozon.ru/project/cart/pkg/api/v1"
@@ -19,8 +22,15 @@ func NewLomsGrpcClient(ctx context.Context, serviceHost string) (service.LomsSer
 	conn, err := grpc.DialContext(
 		ctx,
 		serviceHost,
+		grpc.WithUnaryInterceptor(metrics.UnaryClientInterceptor),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(
+			otelgrpc.NewClientHandler(
+				otelgrpc.WithPropagators(jaeger.Jaeger{}),
+			),
+		),
 	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -29,13 +39,13 @@ func NewLomsGrpcClient(ctx context.Context, serviceHost string) (service.LomsSer
 
 	go func() {
 		<-ctx.Done()
-		log.Println("Shutting down grpc client")
+		zap.L().Info("Shutting down grpc client")
 		if err = conn.Close(); err != nil {
-			log.Println("Failed to shutdown grpc client: ", err)
+			zap.L().Info("Failed to shutdown grpc client: ", zap.Error(err))
 		}
 	}()
 
-	log.Println("Loms grpc: connected to " + serviceHost)
+	zap.L().Info("Loms grpc: connected to " + serviceHost)
 
 	return &lomsGrpcClient{
 		grpcClient: grpcClient,

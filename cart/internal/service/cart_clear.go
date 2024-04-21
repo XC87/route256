@@ -1,11 +1,18 @@
 package service
 
-func (cartService *CartService) DeleteItemsByUserId(userId int64) error {
+import (
+	"context"
+	"go.opentelemetry.io/otel"
+)
+
+func (cartService *CartService) DeleteItemsByUserId(ctx context.Context, userId int64) error {
+	ctx, span := otel.Tracer("default").Start(ctx, "DeleteItemsByUserId")
+	defer span.End()
 	if userId <= 0 {
 		return ErrUserInvalid
 	}
 
-	err := cartService.repository.DeleteItemsByUserId(userId)
+	err := cartService.repository.DeleteItemsByUserId(ctx, userId)
 	if err != nil {
 		return err
 	}

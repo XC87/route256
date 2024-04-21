@@ -30,7 +30,7 @@ func (s *Suit) SetupSuite() {
 	s.storage = repository.NewMemoryRepository()
 	memoryRepository := repository.NewMemoryRepository()
 	productService := product.NewProductService(cartConfig)
-	lomsService, err := loms.NewLomsGrpcClient(nil, cartConfig.LomsGrpcHost)
+	lomsService, err := loms.NewLomsGrpcClient(ctx, cartConfig.LomsGrpcHost)
 	if err != nil {
 		log.Fatal("loms grpc client error: ", err)
 		return
@@ -78,6 +78,7 @@ func (s *Suit) TestDeleteItem() {
 	item := domain.Item{
 		Sku_id: 4679011,
 	}
-	err := s.cartService.DeleteItem(int64(userId), item.Sku_id)
+	ctx := context.Background()
+	err := s.cartService.DeleteItem(ctx, int64(userId), item.Sku_id)
 	s.Require().NoError(err)
 }

@@ -2,8 +2,9 @@ package product
 
 import (
 	"bytes"
+	"fmt"
+	"go.uber.org/zap"
 	"io"
-	"log"
 	"net/http"
 	"time"
 )
@@ -38,7 +39,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 			break
 		}
 
-		log.Printf("Retrying: %s %s %s", req.Method, req.URL, resp.Status)
+		zap.L().Info(fmt.Sprintf("Retrying: %s %s %s", req.Method, req.URL, resp.Status))
 		time.Sleep(time.Second * time.Duration(i+1))
 	}
 

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/rs/zerolog/log"
+	"go.uber.org/zap"
 	"route256.ozon.ru/project/loms/internal/model"
 	"route256.ozon.ru/project/loms/internal/repository/pgs"
 	"route256.ozon.ru/project/loms/internal/repository/pgs/queries"
@@ -28,13 +28,13 @@ func NewStocksPgRepository(dbPool *pgs.DB) *StocksPgRepository {
 func (repo *StocksPgRepository) Reserve(ctx context.Context, items []model.Item) error {
 	tx, err := repo.DbPool.Begin(ctx)
 	if err != nil {
-		log.Err(err).Msg("cannot begin transaction for reserving stocks")
+		zap.L().Error("cannot begin transaction for reserving stocks", zap.Error(err))
 		return fmt.Errorf("cannot begin transaction for reserving stocks: %w", err)
 	}
 	defer func(tx pgx.Tx, ctx context.Context) {
 		err := tx.Rollback(ctx)
 		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-			log.Err(err).Msg("cannot rollback transaction")
+			zap.L().Error("cannot rollback transaction", zap.Error(err))
 		}
 	}(tx, ctx)
 
@@ -62,7 +62,7 @@ func (repo *StocksPgRepository) Reserve(ctx context.Context, items []model.Item)
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		log.Err(err).Msg("cannot commit transaction for reserving stocks")
+		zap.L().Error("cannot commit transaction for reserving stocks", zap.Error(err))
 		return fmt.Errorf("cannot commit transaction for reserving stocks: %w", err)
 	}
 

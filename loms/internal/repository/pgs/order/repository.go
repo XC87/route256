@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"log"
+	"go.uber.org/zap"
 	"route256.ozon.ru/project/loms/internal/model"
 	pgs "route256.ozon.ru/project/loms/internal/repository/pgs"
 	"route256.ozon.ru/project/loms/internal/repository/pgs/queries"
@@ -35,7 +35,7 @@ func (repo *OrderPgsRepository) OrderCreate(ctx context.Context, order *model.Or
 	defer func(tx pgx.Tx, ctx context.Context) {
 		err := tx.Rollback(ctx)
 		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-			log.Printf("cannot rollback transaction")
+			zap.L().Info("cannot rollback transaction")
 		}
 	}(tx, ctx)
 
@@ -82,7 +82,7 @@ func (repo *OrderPgsRepository) OrderUpdate(ctx context.Context, order *model.Or
 	defer func(tx pgx.Tx, ctx context.Context) {
 		err := tx.Rollback(ctx)
 		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-			log.Printf("cannot rollback transaction")
+			zap.L().Info("cannot rollback transaction")
 		}
 	}(tx, ctx)
 
@@ -114,7 +114,7 @@ func (repo *OrderPgsRepository) SetStatus(ctx context.Context, id int64, status 
 	defer func(tx pgx.Tx, ctx context.Context) {
 		err := tx.Rollback(ctx)
 		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-			log.Printf("cannot rollback transaction")
+			zap.L().Info("cannot rollback transaction")
 		}
 	}(tx, ctx)
 

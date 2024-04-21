@@ -2,10 +2,14 @@ package order_usecase
 
 import (
 	"context"
+	"go.opentelemetry.io/otel"
 	"route256.ozon.ru/project/loms/internal/model"
 )
 
 func (s *Service) OrderCancel(ctx context.Context, id int64) error {
+	ctx, span := otel.Tracer("default").Start(ctx, "OrderCancel")
+	defer span.End()
+
 	if id == 0 {
 		return ErrOrderInvalid
 	}

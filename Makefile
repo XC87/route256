@@ -7,6 +7,8 @@ build-all:
 
 run-all:
 	docker-compose up --force-recreate --build
+run-metrics:
+	docker-compose up --force-recreate --build prometheus jaeger grafana
 
 .PHONY: .bin-deps
 .install-bin-deps:

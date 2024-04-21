@@ -15,10 +15,13 @@ type Config struct {
 	ProductServiceRetryCount  int           `env:"PRODUCT_SERVER_RETRY_COUNT, default=3"`
 	ProductServiceTimeout     time.Duration `env:"PRODUCT_SERVER_TIMEOUT, default=5s"`
 	ProductServiceLimit       int           `env:"PRODUCT_SERVER_LIMIT, default=10"`
+	LogLevel                  string        `env:"CART_LOG_LEVEL, default=debug"`
+	TracerUrl                 string        `env:"TRACER_URL, default=http://localhost:14268/api/traces"`
 }
 
 func GetConfig(ctx context.Context) (*Config, error) {
 	var config Config
+
 	if err := envconfig.Process(ctx, &config); err != nil {
 		return nil, err
 	}

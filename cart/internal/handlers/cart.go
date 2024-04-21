@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"context"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"net/http"
+	"route256.ozon.ru/pkg/metrics"
+	"route256.ozon.ru/pkg/tracer"
 	"route256.ozon.ru/project/cart/internal/domain"
 	"route256.ozon.ru/project/cart/internal/mw"
 	"route256.ozon.ru/project/cart/internal/service"
@@ -13,18 +16,18 @@ const (
 	skuIdPath  = "sku_id"
 )
 const (
-	addToCartURL      = "POST /user/{user_id}/cart/{sku_id}"
-	deleteFromCartURL = "DELETE /user/{user_id}/cart/{sku_id}"
-	deleteCartURL     = "DELETE /user/{user_id}/cart"
-	getCartURL        = "GET /user/{user_id}/cart"
-	orderCheckoutURL  = "POST /cart/checkout"
+	addItem             = "POST /user/{user_id}/cart/{sku_id}"
+	deleteItem          = "DELETE /user/{user_id}/cart/{sku_id}"
+	deleteItemsByUserId = "DELETE /user/{user_id}/cart"
+	getItemsByUserId    = "GET /user/{user_id}/cart"
+	orderCheckout       = "POST /cart/checkout"
 )
 
 type CartService interface {
 	AddItem(ctx context.Context, userId int64, item domain.Item) error
 	GetItemsByUserId(ctx context.Context, userId int64) (*service.CartResponse, error)
-	DeleteItem(userId int64, skuId int64) error
-	DeleteItemsByUserId(userId int64) error
+	DeleteItem(ctx context.Context, userId int64, skuId int64) error
+	DeleteItemsByUserId(ctx context.Context, userId int64) error
 	OrderCheckout(ctx context.Context, userId int64) (int64, error)
 }
 
@@ -38,12 +41,18 @@ func NewCartHandler(cartService CartService) *Handler {
 	}
 }
 
-func (h *Handler) Register() {
-	chain := []mw.MiddlewareChain{mw.LoggingMiddleware}
+func (h *Handler) Register(serviceName string) {
+	mainChain := []mw.MiddlewareChain{tracer.HandleMiddleware, mw.LoggingMiddleware}
+	// возможно я тут сильно загнался, но цель была в том чтобы было полноценное описание
+	registerURL(serviceName, h.AddItem, "addItem", addItem, mainChain)
+	registerURL(serviceName, h.DeleteItem, "deleteItem", deleteItem, mainChain)
+	registerURL(serviceName, h.DeleteItemsByUserId, "deleteItemsByUserId", deleteItemsByUserId, mainChain)
+	registerURL(serviceName, h.GetItemsByUserId, "getItemsByUserId", getItemsByUserId, mainChain)
+	registerURL(serviceName, h.OrderCheckout, "orderCheckout", orderCheckout, mainChain)
+}
 
-	http.Handle(addToCartURL, mw.BuildMiddleware(h.AddItem, chain))
-	http.Handle(deleteFromCartURL, mw.BuildMiddleware(h.DeleteItem, chain))
-	http.Handle(deleteCartURL, mw.BuildMiddleware(h.DeleteItemsByUserId, chain))
-	http.Handle(getCartURL, mw.BuildMiddleware(h.GetItemsByUserId, chain))
-	http.Handle(orderCheckoutURL, mw.BuildMiddleware(h.OrderCheckout, chain))
+func registerURL(serviceName string, handler http.HandlerFunc, endpointName string, endpointURL string, mainChain []mw.MiddlewareChain) {
+	mwChain := append(mainChain, metrics.CreateMetricMiddleware(serviceName, endpointName, endpointURL))
+	handler = mw.BuildMiddleware(handler, mwChain)
+	http.Handle(endpointURL, otelhttp.NewHandler(handler, endpointName))
 }

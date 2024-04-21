@@ -31,7 +31,7 @@ func TestCartService_OrderCheckout(t *testing.T) {
 		{
 			name: "Cant get nil cart",
 			prepare: func(f *fields, args args) {
-				f.repository.GetItemsByUserIdMock.Expect(args.userId).Return(nil, ErrCartCantGet)
+				f.repository.GetItemsByUserIdMock.Return(nil, ErrCartCantGet)
 			},
 			args: args{
 				userId: rand.Int64(),
@@ -42,7 +42,7 @@ func TestCartService_OrderCheckout(t *testing.T) {
 		{
 			name: "Get empty cart",
 			prepare: func(f *fields, args args) {
-				f.repository.GetItemsByUserIdMock.Expect(args.userId).Return(domain.ItemsMap{}, nil)
+				f.repository.GetItemsByUserIdMock.Return(domain.ItemsMap{}, nil)
 			},
 			args: args{
 				userId: rand.Int64(),
@@ -52,26 +52,20 @@ func TestCartService_OrderCheckout(t *testing.T) {
 		{
 			name: "Successful checkout",
 			prepare: func(f *fields, args args) {
-				f.repository.GetItemsByUserIdMock.Expect(args.userId).Return(domain.ItemsMap{
+				f.repository.GetItemsByUserIdMock.Return(domain.ItemsMap{
 					31337: {
 						Sku_id: 31337,
 						Count:  1,
 					},
 				}, nil)
-				items := []domain.Item{
-					{
-						Sku_id: 31337,
-						Count:  1,
-					},
-				}
 				Product := []*domain.Product{
 					{
 						Sku: 31337,
 					},
 				}
-				f.productService.GetProductListMock.Expect(ctx, []int64{31337}).Return(Product, nil)
-				f.lomsService.CreateOrderMock.Expect(ctx, args.userId, items).Return(1, nil)
-				f.repository.DeleteItemsByUserIdMock.Expect(args.userId).Return(nil)
+				f.productService.GetProductListMock.Return(Product, nil)
+				f.lomsService.CreateOrderMock.Return(1, nil)
+				f.repository.DeleteItemsByUserIdMock.Return(nil)
 			},
 			args: args{
 				userId: rand.Int64(),

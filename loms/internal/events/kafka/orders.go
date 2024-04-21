@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/IBM/sarama"
-	"log"
+	"go.uber.org/zap"
 	"route256.ozon.ru/project/loms/internal/config"
 	kafka "route256.ozon.ru/project/loms/internal/infra/kafka"
 	"route256.ozon.ru/project/loms/internal/model"
@@ -43,7 +43,7 @@ func createProducer(ctx context.Context, wg *sync.WaitGroup, config *config.Conf
 		kafka.WithProducerFlushFrequency(5*time.Second),
 	)
 	if err != nil {
-		log.Fatalf("cant start event producer: %v", err)
+		zap.S().Fatalf("cant start event producer: %v", err)
 	}
 
 	return eventProducer

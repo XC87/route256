@@ -26,8 +26,8 @@ func TestService_OrderPay(t *testing.T) {
 			name:    "Valid Order ID && status",
 			orderID: 1,
 			mockSetup: func(f *fields, orderID int64) {
-				f.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(&model.Order{Status: model.AwaitingPayment}, nil)
-				f.mockOrderRepository.OrderPayMock.Expect(ctx, orderID).Return(nil)
+				f.mockOrderRepository.OrderInfoMock.Return(&model.Order{Status: model.AwaitingPayment}, nil)
+				f.mockOrderRepository.OrderPayMock.Return(nil)
 				f.mockEventManager.TriggerMock.Return(nil)
 			},
 			expectedError: nil,
@@ -36,7 +36,7 @@ func TestService_OrderPay(t *testing.T) {
 			name:    "Valid order ID && invalid status",
 			orderID: 1,
 			mockSetup: func(f *fields, orderID int64) {
-				f.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(&model.Order{Status: model.New}, nil)
+				f.mockOrderRepository.OrderInfoMock.Return(&model.Order{Status: model.New}, nil)
 			},
 			expectedError: ErrOrderCantBePaid,
 		},
@@ -44,7 +44,7 @@ func TestService_OrderPay(t *testing.T) {
 			name:    "Valid order ID && already paid status",
 			orderID: 1,
 			mockSetup: func(f *fields, orderID int64) {
-				f.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(&model.Order{Status: model.Paid}, nil)
+				f.mockOrderRepository.OrderInfoMock.Return(&model.Order{Status: model.Paid}, nil)
 			},
 			expectedError: ErrOrderAlreadyPaid,
 		},
@@ -59,7 +59,7 @@ func TestService_OrderPay(t *testing.T) {
 			name:    "Order not found",
 			orderID: 1,
 			mockSetup: func(f *fields, orderID int64) {
-				f.mockOrderRepository.OrderInfoMock.Expect(ctx, orderID).Return(&model.Order{}, ErrOrderNotFound)
+				f.mockOrderRepository.OrderInfoMock.Return(&model.Order{}, ErrOrderNotFound)
 			},
 			expectedError: ErrOrderNotFound,
 		},
