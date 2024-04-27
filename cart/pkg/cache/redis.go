@@ -43,35 +43,34 @@ func NewRedis(ctx context.Context, config *config.Config, wg *sync.WaitGroup) *R
 }
 
 func (r Redis) StartMonitorHitMiss(ctx context.Context, registerer prometheus.Registerer) {
-	latestHits := r.cache.Stats().Hits
-	latestMisses := r.cache.Stats().Misses
+	lastHits := r.cache.Stats().Hits
+	lastMiss := r.cache.Stats().Misses
+	cacheHits := promauto.With(registerer).NewCounter(prometheus.CounterOpts{
+		Name: "cache_hits",
+		Help: "The total number of cache  hits",
+	})
+	cacheMisses := promauto.With(registerer).NewCounter(prometheus.CounterOpts{
+		Name: "cache_misses",
+		Help: "The total number of cache misses",
+	})
 
 	go func() {
-		cacheHits := promauto.With(registerer).NewCounter(prometheus.CounterOpts{
-			Name: "cart_list_cache_hits",
-			Help: "The total number of cart list hits",
-		})
-		cacheMisses := promauto.With(registerer).NewCounter(prometheus.CounterOpts{
-			Name: "cart_list_cache_misses",
-			Help: "The total number of cart list misses",
-		})
-
 		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
 
 		for {
 			select {
 			case <-ctx.Done():
-				ticker.Stop()
 				return
 			case <-ticker.C:
 				currentHits := r.cache.Stats().Hits
-				currentMisses := r.cache.Stats().Misses
+				currentMiss := r.cache.Stats().Misses
 
-				cacheHits.Add(float64(currentHits - latestHits))
-				cacheMisses.Add(float64(currentMisses - latestMisses))
+				cacheHits.Add(float64(currentHits - lastHits))
+				cacheMisses.Add(float64(currentMiss - lastMiss))
 
-				latestHits = currentHits
-				latestMisses = currentMisses
+				lastHits = currentHits
+				lastMiss = currentMiss
 			}
 		}
 	}()
