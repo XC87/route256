@@ -17,6 +17,8 @@ import (
 	"route256.ozon.ru/project/cart/internal/repository"
 	"route256.ozon.ru/project/cart/internal/server"
 	"route256.ozon.ru/project/cart/internal/service"
+	"route256.ozon.ru/project/cart/pkg/cache"
+	"sync"
 	"syscall"
 )
 
@@ -53,7 +55,10 @@ func main() {
 		return
 	}
 
-	cartService := service.NewCartService(memoryRepository, productService, lomsService)
+	wg := &sync.WaitGroup{}
+	redis := cache.NewRedis(ctx, cartConfig, wg)
+	cachedService := product.NewCachedService(redis, productService)
+	cartService := service.NewCartService(memoryRepository, cachedService, lomsService)
 
 	cartHandler := handlers.NewCartHandler(cartService)
 	cartHandler.Register("cart")

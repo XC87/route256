@@ -60,7 +60,7 @@ func TestService_OrderInfo(t *testing.T) {
 			}
 			tc.mockSetup(f, tc.orderID)
 			service := NewService(mockOrderRepository, mockStockRepository, mockEventsManagerRepository)
-			_, err := service.OrderInfo(ctx, tc.orderID)
+			_, err := service.OrderInfo(ctx, tc.orderID, 1)
 			assert.Equal(t, tc.expectedError, err)
 		})
 	}

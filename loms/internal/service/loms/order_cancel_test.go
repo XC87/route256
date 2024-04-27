@@ -88,7 +88,7 @@ func TestService_OrderCancel(t *testing.T) {
 			t.Parallel()
 			tc.mockSetup(f, tc.orderID)
 			service := NewService(mockOrderRepository, mockStockRepository, mockEventsManagerRepository)
-			err := service.OrderCancel(ctx, tc.orderID)
+			err := service.OrderCancel(ctx, tc.orderID, 1)
 			assert.Equal(t, tc.expectedError, err)
 		})
 	}

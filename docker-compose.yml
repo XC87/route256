@@ -1,4 +1,4 @@
-version: "3.1"
+version: "3.8"
 services:
   cart:
     image: cart
@@ -66,6 +66,14 @@ services:
     extends:
       file: docker/loms-db.yml
       service: loms-db-slave
+  loms-db-shard1:
+    extends:
+      file: docker/loms-db.yml
+      service: loms-db-shard1
+  loms-db-slave-shard1:
+    extends:
+      file: docker/loms-db.yml
+      service: loms-db-slave-shard1
   kafka-ui:
     extends:
       file: docker/kafka.yml
@@ -91,10 +99,16 @@ services:
     extends:
       file: docker/log-trace-metric.yml
       service: grafana
+  redis:
+    extends:
+      file: docker/redis.yml
+      service: redis
 volumes:
   pglomsdata:
     driver: local
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  redisdata:
     driver: local

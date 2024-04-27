@@ -35,17 +35,18 @@ func (t *OrderPgRepositoryTestSuite) TestFullCycle() {
 	id, err := t.repo.OrderCreate(t.ctx, order)
 	assert.NoError(t.T(), err)
 
-	err = t.repo.OrderCancel(t.ctx, id)
+	err = t.repo.OrderCancel(t.ctx, id, order.User)
 	assert.NoError(t.T(), err)
 
-	dbOrder, err := t.repo.OrderInfo(t.ctx, id)
+	dbOrder, err := t.repo.OrderInfo(t.ctx, id, order.User)
 	assert.NoError(t.T(), err)
 	assert.Equal(t.T(), model.Cancelled, dbOrder.Status)
-
-	_, err = t.repo.DbPool.Exec(t.ctx, "DELETE FROM orders WHERE id = $1", id)
+	index := t.repo.ShardsPool.AutoPickIndex(order.User)
+	dbPool, _ := t.repo.ShardsPool.Pick(index)
+	dbPool.Exec(t.ctx, "DELETE FROM orders WHERE id = $1", id)
 	require.NoError(t.T(), err)
 
-	_, err = t.repo.OrderInfo(t.ctx, id)
+	_, err = t.repo.OrderInfo(t.ctx, id, order.User)
 	assert.ErrorIs(t.T(), err, order_pgs_repository.ErrOrderNotFound)
 }
 
@@ -54,13 +55,9 @@ func (t *OrderPgRepositoryTestSuite) SetupSuite() {
 	lomsConfig, err := config.GetConfig(ctx)
 	require.NoError(t.T(), err)
 
-	dbPool, err := pgs.ConnectToPgsDb(ctx, lomsConfig, true, nil)
+	dbPool, err := pgs.ConnectByDataSourceNames(ctx, lomsConfig.LomsSharedDbString1, nil)
 	require.NoError(t.T(), err)
 
-	repo := order_pgs_repository.NewOrderPgsRepository(dbPool)
-	require.NoError(t.T(), err)
-
-	t.repo = repo
 	t.dbPool = dbPool
 	t.ctx = ctx
 }

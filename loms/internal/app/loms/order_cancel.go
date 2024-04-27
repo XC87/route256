@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Server) OrderCancel(ctx context.Context, request *servicepb.OrderCancelRequest) (*emptypb.Empty, error) {
-	err := s.impl.OrderCancel(ctx, request.OrderId)
+	err := s.impl.OrderCancel(ctx, request.OrderId, request.UserId)
 	if err != nil {
 		if errors.Is(err, order_usecase.ErrOrderAlreadyCanceled) {
 			return nil, status.Errorf(codes.FailedPrecondition, err.Error())

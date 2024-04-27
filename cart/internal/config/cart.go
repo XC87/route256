@@ -17,6 +17,8 @@ type Config struct {
 	ProductServiceLimit       int           `env:"PRODUCT_SERVER_LIMIT, default=10"`
 	LogLevel                  string        `env:"CART_LOG_LEVEL, default=debug"`
 	TracerUrl                 string        `env:"TRACER_URL, default=http://localhost:14268/api/traces"`
+	RedisHost                 string        `env:"REDIS_HOST, default=localhost:6379"`
+	RedisTTL                  time.Duration `env:"REDIS_TTL, default=30m"`
 }
 
 func GetConfig(ctx context.Context) (*Config, error) {

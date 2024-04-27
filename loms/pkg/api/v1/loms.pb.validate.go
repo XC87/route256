@@ -57,9 +57,9 @@ func (m *OrderCreateRequest) validate(all bool) error {
 
 	var errors []error
 
-	if m.GetUser() <= 0 {
+	if m.GetUserId() <= 0 {
 		err := OrderCreateRequestValidationError{
-			field:  "User",
+			field:  "UserId",
 			reason: "value must be greater than 0",
 		}
 		if !all {
@@ -328,7 +328,27 @@ func (m *OrderCreateResponse) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for OrderId
+	if m.GetOrderId() <= 0 {
+		err := OrderCreateResponseValidationError{
+			field:  "OrderId",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetUserId() <= 0 {
+		err := OrderCreateResponseValidationError{
+			field:  "UserId",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return OrderCreateResponseMultiError(errors)
@@ -435,6 +455,17 @@ func (m *OrderInfoRequest) validate(all bool) error {
 	if m.GetOrderId() <= 0 {
 		err := OrderInfoRequestValidationError{
 			field:  "OrderId",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetUserId() <= 0 {
+		err := OrderInfoRequestValidationError{
+			field:  "UserId",
 			reason: "value must be greater than 0",
 		}
 		if !all {
@@ -769,6 +800,142 @@ var _ interface {
 	ErrorName() string
 } = OrderItemInfoResponseValidationError{}
 
+// Validate checks the field values on OrderInfoAllResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *OrderInfoAllResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on OrderInfoAllResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// OrderInfoAllResponseMultiError, or nil if none found.
+func (m *OrderInfoAllResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *OrderInfoAllResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetItems() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, OrderInfoAllResponseValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, OrderInfoAllResponseValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return OrderInfoAllResponseValidationError{
+					field:  fmt.Sprintf("Items[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return OrderInfoAllResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// OrderInfoAllResponseMultiError is an error wrapping multiple validation
+// errors returned by OrderInfoAllResponse.ValidateAll() if the designated
+// constraints aren't met.
+type OrderInfoAllResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m OrderInfoAllResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m OrderInfoAllResponseMultiError) AllErrors() []error { return m }
+
+// OrderInfoAllResponseValidationError is the validation error returned by
+// OrderInfoAllResponse.Validate if the designated constraints aren't met.
+type OrderInfoAllResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e OrderInfoAllResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e OrderInfoAllResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e OrderInfoAllResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e OrderInfoAllResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e OrderInfoAllResponseValidationError) ErrorName() string {
+	return "OrderInfoAllResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e OrderInfoAllResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sOrderInfoAllResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = OrderInfoAllResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = OrderInfoAllResponseValidationError{}
+
 // Validate checks the field values on OrderPayRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the
 // first error encountered is returned, or nil if there are no violations.
@@ -794,6 +961,17 @@ func (m *OrderPayRequest) validate(all bool) error {
 	if m.GetOrderId() <= 0 {
 		err := OrderPayRequestValidationError{
 			field:  "OrderId",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetUserId() <= 0 {
+		err := OrderPayRequestValidationError{
+			field:  "UserId",
 			reason: "value must be greater than 0",
 		}
 		if !all {
@@ -905,6 +1083,17 @@ func (m *OrderCancelRequest) validate(all bool) error {
 	if m.GetOrderId() <= 0 {
 		err := OrderCancelRequestValidationError{
 			field:  "OrderId",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetUserId() <= 0 {
+		err := OrderCancelRequestValidationError{
+			field:  "UserId",
 			reason: "value must be greater than 0",
 		}
 		if !all {

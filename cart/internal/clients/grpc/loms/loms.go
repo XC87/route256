@@ -54,8 +54,8 @@ func NewLomsGrpcClient(ctx context.Context, serviceHost string) (service.LomsSer
 
 func (l *lomsGrpcClient) CreateOrder(ctx context.Context, userId int64, items []domain.Item) (int64, error) {
 	request := &servicepb.OrderCreateRequest{
-		User:  userId,
-		Items: make([]*servicepb.OrderItemCreateRequest, len(items)),
+		UserId: userId,
+		Items:  make([]*servicepb.OrderItemCreateRequest, len(items)),
 	}
 
 	for i, item := range items {

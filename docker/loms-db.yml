@@ -15,7 +15,7 @@ services:
     volumes:
       - ./pglomsdata/init:/docker-entrypoint-initdb.d/
     ports:
-      - "5442:5432"
+      - "5432:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -38,4 +38,44 @@ services:
       POSTGRESQL_REPLICATION_USER: ${POSTGRESQL_REPLICATION_USER}
       POSTGRESQL_REPLICATION_PASSWORD: ${POSTGRESQL_REPLICATION_PASSWORD}
       POSTGRESQL_MASTER_HOST: loms-db
+      POSTGRESQL_MASTER_PORT_NUMBER: 5432
+
+  loms-db-shard1:
+    image: docker.io/bitnami/postgresql:16
+    container_name: loms-db-shard1
+    environment:
+      POSTGRESQL_USERNAME: ${POSTGRES_USER}
+      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRESQL_PGAUDIT_LOG: ${POSTGRESQL_PGAUDIT_LOG}
+      POSTGRESQL_LOG_HOSTNAME: ${POSTGRESQL_LOG_HOSTNAME}
+      POSTGRESQL_REPLICATION_MODE: ${POSTGRESQL_REPLICATION_MODE}
+      POSTGRESQL_REPLICATION_USER: ${POSTGRESQL_REPLICATION_USER}
+      POSTGRESQL_REPLICATION_PASSWORD: ${POSTGRESQL_REPLICATION_PASSWORD}
+      POSTGRESQL_HOST_AUTH_METHOD: ${POSTGRESQL_HOST_AUTH_METHOD}
+    volumes:
+      - ./pglomsdata/init:/docker-entrypoint-initdb.d/
+    ports:
+      - "5442:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  loms-db-slave-shard1:
+    image: docker.io/bitnami/postgresql:16
+    container_name: loms-db-slave-shard1
+    ports:
+      - '5443:5432'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+    depends_on: [ loms-db-shard1 ]
+    environment:
+      POSTGRESQL_USERNAME: ${POSTGRES_USER}
+      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRESQL_PGAUDIT_LOG: ${POSTGRESQL_PGAUDIT_LOG}
+      POSTGRESQL_LOG_HOSTNAME: ${POSTGRESQL_LOG_HOSTNAME}
+      POSTGRESQL_REPLICATION_MODE: slave
+      POSTGRESQL_REPLICATION_USER: ${POSTGRESQL_REPLICATION_USER}
+      POSTGRESQL_REPLICATION_PASSWORD: ${POSTGRESQL_REPLICATION_PASSWORD}
+      POSTGRESQL_MASTER_HOST: loms-db-shard1
       POSTGRESQL_MASTER_PORT_NUMBER: 5432

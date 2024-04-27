@@ -19,8 +19,8 @@ type OrderRepositoryMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
-	funcOrderCancel          func(ctx context.Context, id int64) (err error)
-	inspectFuncOrderCancel   func(ctx context.Context, id int64)
+	funcOrderCancel          func(ctx context.Context, id int64, userId int64) (err error)
+	inspectFuncOrderCancel   func(ctx context.Context, id int64, userId int64)
 	afterOrderCancelCounter  uint64
 	beforeOrderCancelCounter uint64
 	OrderCancelMock          mOrderRepositoryMockOrderCancel
@@ -31,14 +31,20 @@ type OrderRepositoryMock struct {
 	beforeOrderCreateCounter uint64
 	OrderCreateMock          mOrderRepositoryMockOrderCreate
 
-	funcOrderInfo          func(ctx context.Context, id int64) (op1 *model.Order, err error)
-	inspectFuncOrderInfo   func(ctx context.Context, id int64)
+	funcOrderInfo          func(ctx context.Context, id int64, userId int64) (op1 *model.Order, err error)
+	inspectFuncOrderInfo   func(ctx context.Context, id int64, userId int64)
 	afterOrderInfoCounter  uint64
 	beforeOrderInfoCounter uint64
 	OrderInfoMock          mOrderRepositoryMockOrderInfo
 
-	funcOrderPay          func(ctx context.Context, id int64) (err error)
-	inspectFuncOrderPay   func(ctx context.Context, id int64)
+	funcOrderInfoAll          func(ctx context.Context) (opa1 []*model.Order, err error)
+	inspectFuncOrderInfoAll   func(ctx context.Context)
+	afterOrderInfoAllCounter  uint64
+	beforeOrderInfoAllCounter uint64
+	OrderInfoAllMock          mOrderRepositoryMockOrderInfoAll
+
+	funcOrderPay          func(ctx context.Context, id int64, userId int64) (err error)
+	inspectFuncOrderPay   func(ctx context.Context, id int64, userId int64)
 	afterOrderPayCounter  uint64
 	beforeOrderPayCounter uint64
 	OrderPayMock          mOrderRepositoryMockOrderPay
@@ -66,6 +72,9 @@ func NewOrderRepositoryMock(t minimock.Tester) *OrderRepositoryMock {
 
 	m.OrderInfoMock = mOrderRepositoryMockOrderInfo{mock: m}
 	m.OrderInfoMock.callArgs = []*OrderRepositoryMockOrderInfoParams{}
+
+	m.OrderInfoAllMock = mOrderRepositoryMockOrderInfoAll{mock: m}
+	m.OrderInfoAllMock.callArgs = []*OrderRepositoryMockOrderInfoAllParams{}
 
 	m.OrderPayMock = mOrderRepositoryMockOrderPay{mock: m}
 	m.OrderPayMock.callArgs = []*OrderRepositoryMockOrderPayParams{}
@@ -97,8 +106,9 @@ type OrderRepositoryMockOrderCancelExpectation struct {
 
 // OrderRepositoryMockOrderCancelParams contains parameters of the OrderRepository.OrderCancel
 type OrderRepositoryMockOrderCancelParams struct {
-	ctx context.Context
-	id  int64
+	ctx    context.Context
+	id     int64
+	userId int64
 }
 
 // OrderRepositoryMockOrderCancelResults contains results of the OrderRepository.OrderCancel
@@ -107,7 +117,7 @@ type OrderRepositoryMockOrderCancelResults struct {
 }
 
 // Expect sets up expected params for OrderRepository.OrderCancel
-func (mmOrderCancel *mOrderRepositoryMockOrderCancel) Expect(ctx context.Context, id int64) *mOrderRepositoryMockOrderCancel {
+func (mmOrderCancel *mOrderRepositoryMockOrderCancel) Expect(ctx context.Context, id int64, userId int64) *mOrderRepositoryMockOrderCancel {
 	if mmOrderCancel.mock.funcOrderCancel != nil {
 		mmOrderCancel.mock.t.Fatalf("OrderRepositoryMock.OrderCancel mock is already set by Set")
 	}
@@ -116,7 +126,7 @@ func (mmOrderCancel *mOrderRepositoryMockOrderCancel) Expect(ctx context.Context
 		mmOrderCancel.defaultExpectation = &OrderRepositoryMockOrderCancelExpectation{}
 	}
 
-	mmOrderCancel.defaultExpectation.params = &OrderRepositoryMockOrderCancelParams{ctx, id}
+	mmOrderCancel.defaultExpectation.params = &OrderRepositoryMockOrderCancelParams{ctx, id, userId}
 	for _, e := range mmOrderCancel.expectations {
 		if minimock.Equal(e.params, mmOrderCancel.defaultExpectation.params) {
 			mmOrderCancel.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmOrderCancel.defaultExpectation.params)
@@ -127,7 +137,7 @@ func (mmOrderCancel *mOrderRepositoryMockOrderCancel) Expect(ctx context.Context
 }
 
 // Inspect accepts an inspector function that has same arguments as the OrderRepository.OrderCancel
-func (mmOrderCancel *mOrderRepositoryMockOrderCancel) Inspect(f func(ctx context.Context, id int64)) *mOrderRepositoryMockOrderCancel {
+func (mmOrderCancel *mOrderRepositoryMockOrderCancel) Inspect(f func(ctx context.Context, id int64, userId int64)) *mOrderRepositoryMockOrderCancel {
 	if mmOrderCancel.mock.inspectFuncOrderCancel != nil {
 		mmOrderCancel.mock.t.Fatalf("Inspect function is already set for OrderRepositoryMock.OrderCancel")
 	}
@@ -151,7 +161,7 @@ func (mmOrderCancel *mOrderRepositoryMockOrderCancel) Return(err error) *OrderRe
 }
 
 // Set uses given function f to mock the OrderRepository.OrderCancel method
-func (mmOrderCancel *mOrderRepositoryMockOrderCancel) Set(f func(ctx context.Context, id int64) (err error)) *OrderRepositoryMock {
+func (mmOrderCancel *mOrderRepositoryMockOrderCancel) Set(f func(ctx context.Context, id int64, userId int64) (err error)) *OrderRepositoryMock {
 	if mmOrderCancel.defaultExpectation != nil {
 		mmOrderCancel.mock.t.Fatalf("Default expectation is already set for the OrderRepository.OrderCancel method")
 	}
@@ -166,14 +176,14 @@ func (mmOrderCancel *mOrderRepositoryMockOrderCancel) Set(f func(ctx context.Con
 
 // When sets expectation for the OrderRepository.OrderCancel which will trigger the result defined by the following
 // Then helper
-func (mmOrderCancel *mOrderRepositoryMockOrderCancel) When(ctx context.Context, id int64) *OrderRepositoryMockOrderCancelExpectation {
+func (mmOrderCancel *mOrderRepositoryMockOrderCancel) When(ctx context.Context, id int64, userId int64) *OrderRepositoryMockOrderCancelExpectation {
 	if mmOrderCancel.mock.funcOrderCancel != nil {
 		mmOrderCancel.mock.t.Fatalf("OrderRepositoryMock.OrderCancel mock is already set by Set")
 	}
 
 	expectation := &OrderRepositoryMockOrderCancelExpectation{
 		mock:   mmOrderCancel.mock,
-		params: &OrderRepositoryMockOrderCancelParams{ctx, id},
+		params: &OrderRepositoryMockOrderCancelParams{ctx, id, userId},
 	}
 	mmOrderCancel.expectations = append(mmOrderCancel.expectations, expectation)
 	return expectation
@@ -186,15 +196,15 @@ func (e *OrderRepositoryMockOrderCancelExpectation) Then(err error) *OrderReposi
 }
 
 // OrderCancel implements order_usecase.OrderRepository
-func (mmOrderCancel *OrderRepositoryMock) OrderCancel(ctx context.Context, id int64) (err error) {
+func (mmOrderCancel *OrderRepositoryMock) OrderCancel(ctx context.Context, id int64, userId int64) (err error) {
 	mm_atomic.AddUint64(&mmOrderCancel.beforeOrderCancelCounter, 1)
 	defer mm_atomic.AddUint64(&mmOrderCancel.afterOrderCancelCounter, 1)
 
 	if mmOrderCancel.inspectFuncOrderCancel != nil {
-		mmOrderCancel.inspectFuncOrderCancel(ctx, id)
+		mmOrderCancel.inspectFuncOrderCancel(ctx, id, userId)
 	}
 
-	mm_params := OrderRepositoryMockOrderCancelParams{ctx, id}
+	mm_params := OrderRepositoryMockOrderCancelParams{ctx, id, userId}
 
 	// Record call args
 	mmOrderCancel.OrderCancelMock.mutex.Lock()
@@ -211,7 +221,7 @@ func (mmOrderCancel *OrderRepositoryMock) OrderCancel(ctx context.Context, id in
 	if mmOrderCancel.OrderCancelMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmOrderCancel.OrderCancelMock.defaultExpectation.Counter, 1)
 		mm_want := mmOrderCancel.OrderCancelMock.defaultExpectation.params
-		mm_got := OrderRepositoryMockOrderCancelParams{ctx, id}
+		mm_got := OrderRepositoryMockOrderCancelParams{ctx, id, userId}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmOrderCancel.t.Errorf("OrderRepositoryMock.OrderCancel got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -223,9 +233,9 @@ func (mmOrderCancel *OrderRepositoryMock) OrderCancel(ctx context.Context, id in
 		return (*mm_results).err
 	}
 	if mmOrderCancel.funcOrderCancel != nil {
-		return mmOrderCancel.funcOrderCancel(ctx, id)
+		return mmOrderCancel.funcOrderCancel(ctx, id, userId)
 	}
-	mmOrderCancel.t.Fatalf("Unexpected call to OrderRepositoryMock.OrderCancel. %v %v", ctx, id)
+	mmOrderCancel.t.Fatalf("Unexpected call to OrderRepositoryMock.OrderCancel. %v %v %v", ctx, id, userId)
 	return
 }
 
@@ -530,8 +540,9 @@ type OrderRepositoryMockOrderInfoExpectation struct {
 
 // OrderRepositoryMockOrderInfoParams contains parameters of the OrderRepository.OrderInfo
 type OrderRepositoryMockOrderInfoParams struct {
-	ctx context.Context
-	id  int64
+	ctx    context.Context
+	id     int64
+	userId int64
 }
 
 // OrderRepositoryMockOrderInfoResults contains results of the OrderRepository.OrderInfo
@@ -541,7 +552,7 @@ type OrderRepositoryMockOrderInfoResults struct {
 }
 
 // Expect sets up expected params for OrderRepository.OrderInfo
-func (mmOrderInfo *mOrderRepositoryMockOrderInfo) Expect(ctx context.Context, id int64) *mOrderRepositoryMockOrderInfo {
+func (mmOrderInfo *mOrderRepositoryMockOrderInfo) Expect(ctx context.Context, id int64, userId int64) *mOrderRepositoryMockOrderInfo {
 	if mmOrderInfo.mock.funcOrderInfo != nil {
 		mmOrderInfo.mock.t.Fatalf("OrderRepositoryMock.OrderInfo mock is already set by Set")
 	}
@@ -550,7 +561,7 @@ func (mmOrderInfo *mOrderRepositoryMockOrderInfo) Expect(ctx context.Context, id
 		mmOrderInfo.defaultExpectation = &OrderRepositoryMockOrderInfoExpectation{}
 	}
 
-	mmOrderInfo.defaultExpectation.params = &OrderRepositoryMockOrderInfoParams{ctx, id}
+	mmOrderInfo.defaultExpectation.params = &OrderRepositoryMockOrderInfoParams{ctx, id, userId}
 	for _, e := range mmOrderInfo.expectations {
 		if minimock.Equal(e.params, mmOrderInfo.defaultExpectation.params) {
 			mmOrderInfo.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmOrderInfo.defaultExpectation.params)
@@ -561,7 +572,7 @@ func (mmOrderInfo *mOrderRepositoryMockOrderInfo) Expect(ctx context.Context, id
 }
 
 // Inspect accepts an inspector function that has same arguments as the OrderRepository.OrderInfo
-func (mmOrderInfo *mOrderRepositoryMockOrderInfo) Inspect(f func(ctx context.Context, id int64)) *mOrderRepositoryMockOrderInfo {
+func (mmOrderInfo *mOrderRepositoryMockOrderInfo) Inspect(f func(ctx context.Context, id int64, userId int64)) *mOrderRepositoryMockOrderInfo {
 	if mmOrderInfo.mock.inspectFuncOrderInfo != nil {
 		mmOrderInfo.mock.t.Fatalf("Inspect function is already set for OrderRepositoryMock.OrderInfo")
 	}
@@ -585,7 +596,7 @@ func (mmOrderInfo *mOrderRepositoryMockOrderInfo) Return(op1 *model.Order, err e
 }
 
 // Set uses given function f to mock the OrderRepository.OrderInfo method
-func (mmOrderInfo *mOrderRepositoryMockOrderInfo) Set(f func(ctx context.Context, id int64) (op1 *model.Order, err error)) *OrderRepositoryMock {
+func (mmOrderInfo *mOrderRepositoryMockOrderInfo) Set(f func(ctx context.Context, id int64, userId int64) (op1 *model.Order, err error)) *OrderRepositoryMock {
 	if mmOrderInfo.defaultExpectation != nil {
 		mmOrderInfo.mock.t.Fatalf("Default expectation is already set for the OrderRepository.OrderInfo method")
 	}
@@ -600,14 +611,14 @@ func (mmOrderInfo *mOrderRepositoryMockOrderInfo) Set(f func(ctx context.Context
 
 // When sets expectation for the OrderRepository.OrderInfo which will trigger the result defined by the following
 // Then helper
-func (mmOrderInfo *mOrderRepositoryMockOrderInfo) When(ctx context.Context, id int64) *OrderRepositoryMockOrderInfoExpectation {
+func (mmOrderInfo *mOrderRepositoryMockOrderInfo) When(ctx context.Context, id int64, userId int64) *OrderRepositoryMockOrderInfoExpectation {
 	if mmOrderInfo.mock.funcOrderInfo != nil {
 		mmOrderInfo.mock.t.Fatalf("OrderRepositoryMock.OrderInfo mock is already set by Set")
 	}
 
 	expectation := &OrderRepositoryMockOrderInfoExpectation{
 		mock:   mmOrderInfo.mock,
-		params: &OrderRepositoryMockOrderInfoParams{ctx, id},
+		params: &OrderRepositoryMockOrderInfoParams{ctx, id, userId},
 	}
 	mmOrderInfo.expectations = append(mmOrderInfo.expectations, expectation)
 	return expectation
@@ -620,15 +631,15 @@ func (e *OrderRepositoryMockOrderInfoExpectation) Then(op1 *model.Order, err err
 }
 
 // OrderInfo implements order_usecase.OrderRepository
-func (mmOrderInfo *OrderRepositoryMock) OrderInfo(ctx context.Context, id int64) (op1 *model.Order, err error) {
+func (mmOrderInfo *OrderRepositoryMock) OrderInfo(ctx context.Context, id int64, userId int64) (op1 *model.Order, err error) {
 	mm_atomic.AddUint64(&mmOrderInfo.beforeOrderInfoCounter, 1)
 	defer mm_atomic.AddUint64(&mmOrderInfo.afterOrderInfoCounter, 1)
 
 	if mmOrderInfo.inspectFuncOrderInfo != nil {
-		mmOrderInfo.inspectFuncOrderInfo(ctx, id)
+		mmOrderInfo.inspectFuncOrderInfo(ctx, id, userId)
 	}
 
-	mm_params := OrderRepositoryMockOrderInfoParams{ctx, id}
+	mm_params := OrderRepositoryMockOrderInfoParams{ctx, id, userId}
 
 	// Record call args
 	mmOrderInfo.OrderInfoMock.mutex.Lock()
@@ -645,7 +656,7 @@ func (mmOrderInfo *OrderRepositoryMock) OrderInfo(ctx context.Context, id int64)
 	if mmOrderInfo.OrderInfoMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmOrderInfo.OrderInfoMock.defaultExpectation.Counter, 1)
 		mm_want := mmOrderInfo.OrderInfoMock.defaultExpectation.params
-		mm_got := OrderRepositoryMockOrderInfoParams{ctx, id}
+		mm_got := OrderRepositoryMockOrderInfoParams{ctx, id, userId}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmOrderInfo.t.Errorf("OrderRepositoryMock.OrderInfo got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -657,9 +668,9 @@ func (mmOrderInfo *OrderRepositoryMock) OrderInfo(ctx context.Context, id int64)
 		return (*mm_results).op1, (*mm_results).err
 	}
 	if mmOrderInfo.funcOrderInfo != nil {
-		return mmOrderInfo.funcOrderInfo(ctx, id)
+		return mmOrderInfo.funcOrderInfo(ctx, id, userId)
 	}
-	mmOrderInfo.t.Fatalf("Unexpected call to OrderRepositoryMock.OrderInfo. %v %v", ctx, id)
+	mmOrderInfo.t.Fatalf("Unexpected call to OrderRepositoryMock.OrderInfo. %v %v %v", ctx, id, userId)
 	return
 }
 
@@ -728,6 +739,222 @@ func (m *OrderRepositoryMock) MinimockOrderInfoInspect() {
 	}
 }
 
+type mOrderRepositoryMockOrderInfoAll struct {
+	mock               *OrderRepositoryMock
+	defaultExpectation *OrderRepositoryMockOrderInfoAllExpectation
+	expectations       []*OrderRepositoryMockOrderInfoAllExpectation
+
+	callArgs []*OrderRepositoryMockOrderInfoAllParams
+	mutex    sync.RWMutex
+}
+
+// OrderRepositoryMockOrderInfoAllExpectation specifies expectation struct of the OrderRepository.OrderInfoAll
+type OrderRepositoryMockOrderInfoAllExpectation struct {
+	mock    *OrderRepositoryMock
+	params  *OrderRepositoryMockOrderInfoAllParams
+	results *OrderRepositoryMockOrderInfoAllResults
+	Counter uint64
+}
+
+// OrderRepositoryMockOrderInfoAllParams contains parameters of the OrderRepository.OrderInfoAll
+type OrderRepositoryMockOrderInfoAllParams struct {
+	ctx context.Context
+}
+
+// OrderRepositoryMockOrderInfoAllResults contains results of the OrderRepository.OrderInfoAll
+type OrderRepositoryMockOrderInfoAllResults struct {
+	opa1 []*model.Order
+	err  error
+}
+
+// Expect sets up expected params for OrderRepository.OrderInfoAll
+func (mmOrderInfoAll *mOrderRepositoryMockOrderInfoAll) Expect(ctx context.Context) *mOrderRepositoryMockOrderInfoAll {
+	if mmOrderInfoAll.mock.funcOrderInfoAll != nil {
+		mmOrderInfoAll.mock.t.Fatalf("OrderRepositoryMock.OrderInfoAll mock is already set by Set")
+	}
+
+	if mmOrderInfoAll.defaultExpectation == nil {
+		mmOrderInfoAll.defaultExpectation = &OrderRepositoryMockOrderInfoAllExpectation{}
+	}
+
+	mmOrderInfoAll.defaultExpectation.params = &OrderRepositoryMockOrderInfoAllParams{ctx}
+	for _, e := range mmOrderInfoAll.expectations {
+		if minimock.Equal(e.params, mmOrderInfoAll.defaultExpectation.params) {
+			mmOrderInfoAll.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmOrderInfoAll.defaultExpectation.params)
+		}
+	}
+
+	return mmOrderInfoAll
+}
+
+// Inspect accepts an inspector function that has same arguments as the OrderRepository.OrderInfoAll
+func (mmOrderInfoAll *mOrderRepositoryMockOrderInfoAll) Inspect(f func(ctx context.Context)) *mOrderRepositoryMockOrderInfoAll {
+	if mmOrderInfoAll.mock.inspectFuncOrderInfoAll != nil {
+		mmOrderInfoAll.mock.t.Fatalf("Inspect function is already set for OrderRepositoryMock.OrderInfoAll")
+	}
+
+	mmOrderInfoAll.mock.inspectFuncOrderInfoAll = f
+
+	return mmOrderInfoAll
+}
+
+// Return sets up results that will be returned by OrderRepository.OrderInfoAll
+func (mmOrderInfoAll *mOrderRepositoryMockOrderInfoAll) Return(opa1 []*model.Order, err error) *OrderRepositoryMock {
+	if mmOrderInfoAll.mock.funcOrderInfoAll != nil {
+		mmOrderInfoAll.mock.t.Fatalf("OrderRepositoryMock.OrderInfoAll mock is already set by Set")
+	}
+
+	if mmOrderInfoAll.defaultExpectation == nil {
+		mmOrderInfoAll.defaultExpectation = &OrderRepositoryMockOrderInfoAllExpectation{mock: mmOrderInfoAll.mock}
+	}
+	mmOrderInfoAll.defaultExpectation.results = &OrderRepositoryMockOrderInfoAllResults{opa1, err}
+	return mmOrderInfoAll.mock
+}
+
+// Set uses given function f to mock the OrderRepository.OrderInfoAll method
+func (mmOrderInfoAll *mOrderRepositoryMockOrderInfoAll) Set(f func(ctx context.Context) (opa1 []*model.Order, err error)) *OrderRepositoryMock {
+	if mmOrderInfoAll.defaultExpectation != nil {
+		mmOrderInfoAll.mock.t.Fatalf("Default expectation is already set for the OrderRepository.OrderInfoAll method")
+	}
+
+	if len(mmOrderInfoAll.expectations) > 0 {
+		mmOrderInfoAll.mock.t.Fatalf("Some expectations are already set for the OrderRepository.OrderInfoAll method")
+	}
+
+	mmOrderInfoAll.mock.funcOrderInfoAll = f
+	return mmOrderInfoAll.mock
+}
+
+// When sets expectation for the OrderRepository.OrderInfoAll which will trigger the result defined by the following
+// Then helper
+func (mmOrderInfoAll *mOrderRepositoryMockOrderInfoAll) When(ctx context.Context) *OrderRepositoryMockOrderInfoAllExpectation {
+	if mmOrderInfoAll.mock.funcOrderInfoAll != nil {
+		mmOrderInfoAll.mock.t.Fatalf("OrderRepositoryMock.OrderInfoAll mock is already set by Set")
+	}
+
+	expectation := &OrderRepositoryMockOrderInfoAllExpectation{
+		mock:   mmOrderInfoAll.mock,
+		params: &OrderRepositoryMockOrderInfoAllParams{ctx},
+	}
+	mmOrderInfoAll.expectations = append(mmOrderInfoAll.expectations, expectation)
+	return expectation
+}
+
+// Then sets up OrderRepository.OrderInfoAll return parameters for the expectation previously defined by the When method
+func (e *OrderRepositoryMockOrderInfoAllExpectation) Then(opa1 []*model.Order, err error) *OrderRepositoryMock {
+	e.results = &OrderRepositoryMockOrderInfoAllResults{opa1, err}
+	return e.mock
+}
+
+// OrderInfoAll implements order_usecase.OrderRepository
+func (mmOrderInfoAll *OrderRepositoryMock) OrderInfoAll(ctx context.Context) (opa1 []*model.Order, err error) {
+	mm_atomic.AddUint64(&mmOrderInfoAll.beforeOrderInfoAllCounter, 1)
+	defer mm_atomic.AddUint64(&mmOrderInfoAll.afterOrderInfoAllCounter, 1)
+
+	if mmOrderInfoAll.inspectFuncOrderInfoAll != nil {
+		mmOrderInfoAll.inspectFuncOrderInfoAll(ctx)
+	}
+
+	mm_params := OrderRepositoryMockOrderInfoAllParams{ctx}
+
+	// Record call args
+	mmOrderInfoAll.OrderInfoAllMock.mutex.Lock()
+	mmOrderInfoAll.OrderInfoAllMock.callArgs = append(mmOrderInfoAll.OrderInfoAllMock.callArgs, &mm_params)
+	mmOrderInfoAll.OrderInfoAllMock.mutex.Unlock()
+
+	for _, e := range mmOrderInfoAll.OrderInfoAllMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.opa1, e.results.err
+		}
+	}
+
+	if mmOrderInfoAll.OrderInfoAllMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmOrderInfoAll.OrderInfoAllMock.defaultExpectation.Counter, 1)
+		mm_want := mmOrderInfoAll.OrderInfoAllMock.defaultExpectation.params
+		mm_got := OrderRepositoryMockOrderInfoAllParams{ctx}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmOrderInfoAll.t.Errorf("OrderRepositoryMock.OrderInfoAll got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmOrderInfoAll.OrderInfoAllMock.defaultExpectation.results
+		if mm_results == nil {
+			mmOrderInfoAll.t.Fatal("No results are set for the OrderRepositoryMock.OrderInfoAll")
+		}
+		return (*mm_results).opa1, (*mm_results).err
+	}
+	if mmOrderInfoAll.funcOrderInfoAll != nil {
+		return mmOrderInfoAll.funcOrderInfoAll(ctx)
+	}
+	mmOrderInfoAll.t.Fatalf("Unexpected call to OrderRepositoryMock.OrderInfoAll. %v", ctx)
+	return
+}
+
+// OrderInfoAllAfterCounter returns a count of finished OrderRepositoryMock.OrderInfoAll invocations
+func (mmOrderInfoAll *OrderRepositoryMock) OrderInfoAllAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmOrderInfoAll.afterOrderInfoAllCounter)
+}
+
+// OrderInfoAllBeforeCounter returns a count of OrderRepositoryMock.OrderInfoAll invocations
+func (mmOrderInfoAll *OrderRepositoryMock) OrderInfoAllBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmOrderInfoAll.beforeOrderInfoAllCounter)
+}
+
+// Calls returns a list of arguments used in each call to OrderRepositoryMock.OrderInfoAll.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmOrderInfoAll *mOrderRepositoryMockOrderInfoAll) Calls() []*OrderRepositoryMockOrderInfoAllParams {
+	mmOrderInfoAll.mutex.RLock()
+
+	argCopy := make([]*OrderRepositoryMockOrderInfoAllParams, len(mmOrderInfoAll.callArgs))
+	copy(argCopy, mmOrderInfoAll.callArgs)
+
+	mmOrderInfoAll.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockOrderInfoAllDone returns true if the count of the OrderInfoAll invocations corresponds
+// the number of defined expectations
+func (m *OrderRepositoryMock) MinimockOrderInfoAllDone() bool {
+	for _, e := range m.OrderInfoAllMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.OrderInfoAllMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterOrderInfoAllCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcOrderInfoAll != nil && mm_atomic.LoadUint64(&m.afterOrderInfoAllCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockOrderInfoAllInspect logs each unmet expectation
+func (m *OrderRepositoryMock) MinimockOrderInfoAllInspect() {
+	for _, e := range m.OrderInfoAllMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to OrderRepositoryMock.OrderInfoAll with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.OrderInfoAllMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterOrderInfoAllCounter) < 1 {
+		if m.OrderInfoAllMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to OrderRepositoryMock.OrderInfoAll")
+		} else {
+			m.t.Errorf("Expected call to OrderRepositoryMock.OrderInfoAll with params: %#v", *m.OrderInfoAllMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcOrderInfoAll != nil && mm_atomic.LoadUint64(&m.afterOrderInfoAllCounter) < 1 {
+		m.t.Error("Expected call to OrderRepositoryMock.OrderInfoAll")
+	}
+}
+
 type mOrderRepositoryMockOrderPay struct {
 	mock               *OrderRepositoryMock
 	defaultExpectation *OrderRepositoryMockOrderPayExpectation
@@ -747,8 +974,9 @@ type OrderRepositoryMockOrderPayExpectation struct {
 
 // OrderRepositoryMockOrderPayParams contains parameters of the OrderRepository.OrderPay
 type OrderRepositoryMockOrderPayParams struct {
-	ctx context.Context
-	id  int64
+	ctx    context.Context
+	id     int64
+	userId int64
 }
 
 // OrderRepositoryMockOrderPayResults contains results of the OrderRepository.OrderPay
@@ -757,7 +985,7 @@ type OrderRepositoryMockOrderPayResults struct {
 }
 
 // Expect sets up expected params for OrderRepository.OrderPay
-func (mmOrderPay *mOrderRepositoryMockOrderPay) Expect(ctx context.Context, id int64) *mOrderRepositoryMockOrderPay {
+func (mmOrderPay *mOrderRepositoryMockOrderPay) Expect(ctx context.Context, id int64, userId int64) *mOrderRepositoryMockOrderPay {
 	if mmOrderPay.mock.funcOrderPay != nil {
 		mmOrderPay.mock.t.Fatalf("OrderRepositoryMock.OrderPay mock is already set by Set")
 	}
@@ -766,7 +994,7 @@ func (mmOrderPay *mOrderRepositoryMockOrderPay) Expect(ctx context.Context, id i
 		mmOrderPay.defaultExpectation = &OrderRepositoryMockOrderPayExpectation{}
 	}
 
-	mmOrderPay.defaultExpectation.params = &OrderRepositoryMockOrderPayParams{ctx, id}
+	mmOrderPay.defaultExpectation.params = &OrderRepositoryMockOrderPayParams{ctx, id, userId}
 	for _, e := range mmOrderPay.expectations {
 		if minimock.Equal(e.params, mmOrderPay.defaultExpectation.params) {
 			mmOrderPay.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmOrderPay.defaultExpectation.params)
@@ -777,7 +1005,7 @@ func (mmOrderPay *mOrderRepositoryMockOrderPay) Expect(ctx context.Context, id i
 }
 
 // Inspect accepts an inspector function that has same arguments as the OrderRepository.OrderPay
-func (mmOrderPay *mOrderRepositoryMockOrderPay) Inspect(f func(ctx context.Context, id int64)) *mOrderRepositoryMockOrderPay {
+func (mmOrderPay *mOrderRepositoryMockOrderPay) Inspect(f func(ctx context.Context, id int64, userId int64)) *mOrderRepositoryMockOrderPay {
 	if mmOrderPay.mock.inspectFuncOrderPay != nil {
 		mmOrderPay.mock.t.Fatalf("Inspect function is already set for OrderRepositoryMock.OrderPay")
 	}
@@ -801,7 +1029,7 @@ func (mmOrderPay *mOrderRepositoryMockOrderPay) Return(err error) *OrderReposito
 }
 
 // Set uses given function f to mock the OrderRepository.OrderPay method
-func (mmOrderPay *mOrderRepositoryMockOrderPay) Set(f func(ctx context.Context, id int64) (err error)) *OrderRepositoryMock {
+func (mmOrderPay *mOrderRepositoryMockOrderPay) Set(f func(ctx context.Context, id int64, userId int64) (err error)) *OrderRepositoryMock {
 	if mmOrderPay.defaultExpectation != nil {
 		mmOrderPay.mock.t.Fatalf("Default expectation is already set for the OrderRepository.OrderPay method")
 	}
@@ -816,14 +1044,14 @@ func (mmOrderPay *mOrderRepositoryMockOrderPay) Set(f func(ctx context.Context, 
 
 // When sets expectation for the OrderRepository.OrderPay which will trigger the result defined by the following
 // Then helper
-func (mmOrderPay *mOrderRepositoryMockOrderPay) When(ctx context.Context, id int64) *OrderRepositoryMockOrderPayExpectation {
+func (mmOrderPay *mOrderRepositoryMockOrderPay) When(ctx context.Context, id int64, userId int64) *OrderRepositoryMockOrderPayExpectation {
 	if mmOrderPay.mock.funcOrderPay != nil {
 		mmOrderPay.mock.t.Fatalf("OrderRepositoryMock.OrderPay mock is already set by Set")
 	}
 
 	expectation := &OrderRepositoryMockOrderPayExpectation{
 		mock:   mmOrderPay.mock,
-		params: &OrderRepositoryMockOrderPayParams{ctx, id},
+		params: &OrderRepositoryMockOrderPayParams{ctx, id, userId},
 	}
 	mmOrderPay.expectations = append(mmOrderPay.expectations, expectation)
 	return expectation
@@ -836,15 +1064,15 @@ func (e *OrderRepositoryMockOrderPayExpectation) Then(err error) *OrderRepositor
 }
 
 // OrderPay implements order_usecase.OrderRepository
-func (mmOrderPay *OrderRepositoryMock) OrderPay(ctx context.Context, id int64) (err error) {
+func (mmOrderPay *OrderRepositoryMock) OrderPay(ctx context.Context, id int64, userId int64) (err error) {
 	mm_atomic.AddUint64(&mmOrderPay.beforeOrderPayCounter, 1)
 	defer mm_atomic.AddUint64(&mmOrderPay.afterOrderPayCounter, 1)
 
 	if mmOrderPay.inspectFuncOrderPay != nil {
-		mmOrderPay.inspectFuncOrderPay(ctx, id)
+		mmOrderPay.inspectFuncOrderPay(ctx, id, userId)
 	}
 
-	mm_params := OrderRepositoryMockOrderPayParams{ctx, id}
+	mm_params := OrderRepositoryMockOrderPayParams{ctx, id, userId}
 
 	// Record call args
 	mmOrderPay.OrderPayMock.mutex.Lock()
@@ -861,7 +1089,7 @@ func (mmOrderPay *OrderRepositoryMock) OrderPay(ctx context.Context, id int64) (
 	if mmOrderPay.OrderPayMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmOrderPay.OrderPayMock.defaultExpectation.Counter, 1)
 		mm_want := mmOrderPay.OrderPayMock.defaultExpectation.params
-		mm_got := OrderRepositoryMockOrderPayParams{ctx, id}
+		mm_got := OrderRepositoryMockOrderPayParams{ctx, id, userId}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmOrderPay.t.Errorf("OrderRepositoryMock.OrderPay got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -873,9 +1101,9 @@ func (mmOrderPay *OrderRepositoryMock) OrderPay(ctx context.Context, id int64) (
 		return (*mm_results).err
 	}
 	if mmOrderPay.funcOrderPay != nil {
-		return mmOrderPay.funcOrderPay(ctx, id)
+		return mmOrderPay.funcOrderPay(ctx, id, userId)
 	}
-	mmOrderPay.t.Fatalf("Unexpected call to OrderRepositoryMock.OrderPay. %v %v", ctx, id)
+	mmOrderPay.t.Fatalf("Unexpected call to OrderRepositoryMock.OrderPay. %v %v %v", ctx, id, userId)
 	return
 }
 
@@ -1170,6 +1398,8 @@ func (m *OrderRepositoryMock) MinimockFinish() {
 
 			m.MinimockOrderInfoInspect()
 
+			m.MinimockOrderInfoAllInspect()
+
 			m.MinimockOrderPayInspect()
 
 			m.MinimockOrderUpdateInspect()
@@ -1200,6 +1430,7 @@ func (m *OrderRepositoryMock) minimockDone() bool {
 		m.MinimockOrderCancelDone() &&
 		m.MinimockOrderCreateDone() &&
 		m.MinimockOrderInfoDone() &&
+		m.MinimockOrderInfoAllDone() &&
 		m.MinimockOrderPayDone() &&
 		m.MinimockOrderUpdateDone()
 }

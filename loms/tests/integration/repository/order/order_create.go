@@ -58,7 +58,9 @@ func (testSuit *OrderPgRepositoryTestSuite) TestOrderCreate() {
 			id, err := testSuit.repo.OrderCreate(testSuit.ctx, tc.order)
 			require.NoError(t, err)
 			require.NotEmpty(t, id)
-			_, err = testSuit.repo.DbPool.Exec(testSuit.ctx, "DELETE FROM orders WHERE id = $1", id)
+			index := testSuit.repo.ShardsPool.AutoPickIndex(tc.order.User)
+			dbPool, _ := testSuit.repo.ShardsPool.Pick(index)
+			dbPool.Exec(testSuit.ctx, "DELETE FROM orders WHERE id = $1", id)
 			require.NoError(t, err)
 		})
 	}

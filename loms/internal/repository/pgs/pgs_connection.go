@@ -6,7 +6,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"go.uber.org/zap"
-	"route256.ozon.ru/project/loms/internal/config"
 	"route256.ozon.ru/project/loms/internal/repository/pgs/queries"
 	"strings"
 	"sync/atomic"
@@ -18,29 +17,6 @@ import (
 type SqlTracer interface {
 	TraceQueryStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryStartData) context.Context
 	TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData)
-}
-
-func ConnectToPgsDb(ctx context.Context, config *config.Config, masterOnly bool, tracer SqlTracer) (*DB, error) {
-	connString := fmt.Sprintf(
-		"postgresql://%s:%s@%s/%s;",
-		config.LomsDbUser,
-		config.LomsDbPass,
-		config.LomsDbHost,
-		config.LomsDbName,
-	)
-	if masterOnly {
-		connString += connString
-		connString = strings.Trim(connString, ";")
-	} else {
-		connString += fmt.Sprintf(
-			"postgresql://%s:%s@%s/%s",
-			config.LomsDbSlaveUser,
-			config.LomsDbSlavePass,
-			config.LomsDbSlaveHost,
-			config.LomsDbName,
-		)
-	}
-	return ConnectByDataSourceNames(ctx, connString, tracer)
 }
 
 // https://github.com/tsenart/nap Взял отсюда и переделал

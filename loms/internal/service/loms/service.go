@@ -10,9 +10,10 @@ import (
 type OrderRepository interface {
 	OrderCreate(ctx context.Context, order *model.Order) (int64, error)
 	OrderUpdate(ctx context.Context, order *model.Order) error
-	OrderInfo(ctx context.Context, id int64) (*model.Order, error)
-	OrderPay(ctx context.Context, id int64) error
-	OrderCancel(ctx context.Context, id int64) error
+	OrderInfo(ctx context.Context, id int64, userId int64) (*model.Order, error)
+	OrderInfoAll(ctx context.Context) ([]*model.Order, error)
+	OrderPay(ctx context.Context, id int64, userId int64) error
+	OrderCancel(ctx context.Context, id int64, userId int64) error
 }
 
 type StockRepository interface {

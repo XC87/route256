@@ -7,4 +7,5 @@ use (
 	./pkg/tracer
 	./pkg/metrics
 	./pkg/logger
+	./pkg/keymutex
 )

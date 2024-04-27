@@ -6,7 +6,7 @@ import (
 	"route256.ozon.ru/project/loms/internal/model"
 )
 
-func (s *Service) OrderCancel(ctx context.Context, id int64) error {
+func (s *Service) OrderCancel(ctx context.Context, id int64, userId int64) error {
 	ctx, span := otel.Tracer("default").Start(ctx, "OrderCancel")
 	defer span.End()
 
@@ -14,7 +14,7 @@ func (s *Service) OrderCancel(ctx context.Context, id int64) error {
 		return ErrOrderInvalid
 	}
 
-	order, err := s.OrderRepository.OrderInfo(ctx, id)
+	order, err := s.OrderRepository.OrderInfo(ctx, id, userId)
 	if err != nil {
 		return ErrOrderNotFound
 	}
@@ -28,7 +28,7 @@ func (s *Service) OrderCancel(ctx context.Context, id int64) error {
 	}
 	s.StockRepository.UnReserve(ctx, order.Items)
 
-	err = s.OrderRepository.OrderCancel(ctx, id)
+	err = s.OrderRepository.OrderCancel(ctx, id, userId)
 	if err == nil {
 		s.EventManager.Trigger(ctx, "order-events", order)
 	}

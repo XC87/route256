@@ -67,7 +67,7 @@ func (t *StockPgRepositoryTestSuite) SetupSuite() {
 	lomsConfig, err := config.GetConfig(ctx)
 	require.NoError(t.T(), err)
 
-	dbPool, err := pgs.ConnectToPgsDb(ctx, lomsConfig, true, nil)
+	dbPool, err := pgs.ConnectByDataSourceNames(ctx, lomsConfig.LomsSharedDbString1, nil)
 	require.NoError(t.T(), err)
 
 	repo := stock_pgs_repository.NewStocksPgRepository(dbPool)

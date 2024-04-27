@@ -51,7 +51,7 @@ func main() {
 		defer tracerShutdown(ctx)
 	}
 
-	dbConnection := connectToDB(ctx, lomsConfig)
+	dbConnection := connectToShard(ctx, lomsConfig)
 	defer dbConnection.Close()
 
 	grpcServer := createGRPCServer()
@@ -65,11 +65,18 @@ func main() {
 	startHttpServer(ctx, grpcServer, controller, lomsConfig.LomsHttpPort)
 }
 
-func connectToDB(ctx context.Context, config *config.Config) *pgs.DB {
+func connectToShard(ctx context.Context, config *config.Config) *pgs.Manager {
+	pgsDbList := make([]*pgs.DB, 0)
 	sqlMetrics := metrics.NewSqlMetrics()
+	pgsDbList = append(pgsDbList, connectToDB(ctx, config.LomsSharedDbString1, sqlMetrics))
+	pgsDbList = append(pgsDbList, connectToDB(ctx, config.LomsSharedDbString2, sqlMetrics))
+	return pgs.NewShardManager(pgs.GetMurmur3ShardFn(len(pgsDbList)), pgsDbList)
+}
+
+func connectToDB(ctx context.Context, connString string, sqlMetrics *metrics.SqlMetric) *pgs.DB {
 	otelPgxTracer := otelpgx.NewTracer()
 	sqlTracer := tracer.NewSqlTracerGroup(sqlMetrics, otelPgxTracer)
-	dbPool, err := pgs.ConnectToPgsDb(ctx, config, false, sqlTracer)
+	dbPool, err := pgs.ConnectByDataSourceNames(ctx, connString, sqlTracer)
 	if err != nil {
 		zap.S().Fatalln("Cannot initialize connection to postgres")
 	}
@@ -91,9 +98,10 @@ func createGRPCServer() *grpc.Server {
 	return grpcServer
 }
 
-func createLomsServer(dbConnection *pgs.DB, eventManager loms_usecase.EventManagers) *loms.Server {
+func createLomsServer(dbConnection *pgs.Manager, eventManager loms_usecase.EventManagers) *loms.Server {
 	orderRepository := order_pgs_repository.NewOrderPgsRepository(dbConnection)
-	stockRepository := stock_pgs_repository.NewStocksPgRepository(dbConnection)
+	mainServer, _ := dbConnection.Pick(0)
+	stockRepository := stock_pgs_repository.NewStocksPgRepository(mainServer)
 
 	useCase := loms_usecase.NewService(orderRepository, stockRepository, eventManager)
 	return loms.NewServer(useCase)

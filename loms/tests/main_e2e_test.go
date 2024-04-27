@@ -28,6 +28,13 @@ func TestAPICases(t *testing.T) {
 		expectedBody   []byte
 	}{
 		{
+			name:           "Check order info all",
+			method:         "GET",
+			headers:        "x-auth: test;",
+			url:            "http://localhost:8081/order/info/all",
+			expectedStatus: http.StatusOK,
+		},
+		{
 			name:           "Stock check before create order",
 			method:         "POST",
 			headers:        "x-auth: test;",

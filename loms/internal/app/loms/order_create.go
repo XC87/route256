@@ -37,7 +37,7 @@ func repackOrder(in *servicepb.OrderCreateRequest) *model.Order {
 	}
 	return &model.Order{
 		Status: model.New,
-		User:   in.User,
+		User:   in.UserId,
 		Items:  items,
 	}
 }

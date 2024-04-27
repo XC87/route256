@@ -13,10 +13,11 @@ import (
 )
 
 const createOrder = `-- name: CreateOrder :one
-insert into orders (created_at, updated_at, user_id, status) values ($1,$2, $3, $4) returning id
+insert into orders (id, created_at, updated_at, user_id, status) values (nextval('order_id_manual_seq') + $1, $2, $3, $4, $5) returning id
 `
 
 type CreateOrderParams struct {
+	Id        interface{}      `json:"column_1"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 	UserID    int64            `json:"user_id"`
@@ -25,6 +26,7 @@ type CreateOrderParams struct {
 
 func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64, error) {
 	row := q.db.QueryRow(ctx, createOrder,
+		arg.Id,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.UserID,
@@ -66,19 +68,65 @@ func (q *Queries) GetBySku(ctx context.Context, sku int64) (GetBySkuRow, error) 
 	return i, err
 }
 
+const getOrderAll = `-- name: GetOrderAll :many
+select o.id, o.created_at, o.updated_at, o.user_id, o.status, oi.id, oi.order_id, oi.sku, oi.count from orders o
+    left join order_items oi on o.id = oi.order_id
+order by o.id desc
+`
+
+type GetOrderAllRow struct {
+	Order     Order     `json:"order"`
+	OrderItem OrderItem `json:"order_item"`
+}
+
+func (q *Queries) GetOrderAll(ctx context.Context) ([]GetOrderAllRow, error) {
+	rows, err := q.db.Query(ctx, getOrderAll)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetOrderAllRow
+	for rows.Next() {
+		var i GetOrderAllRow
+		if err := rows.Scan(
+			&i.Order.ID,
+			&i.Order.CreatedAt,
+			&i.Order.UpdatedAt,
+			&i.Order.UserID,
+			&i.Order.Status,
+			&i.OrderItem.ID,
+			&i.OrderItem.OrderID,
+			&i.OrderItem.Sku,
+			&i.OrderItem.Count,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getOrderById = `-- name: GetOrderById :many
 select o.id, o.created_at, o.updated_at, o.user_id, o.status, oi.id, oi.order_id, oi.sku, oi.count from orders o
     left join order_items oi on o.id = oi.order_id
-where o.id = $1
+where o.id = $1 and o.user_id = $2
 `
+
+type GetOrderByIdParams struct {
+	ID     int64 `json:"id"`
+	UserID int64 `json:"user_id"`
+}
 
 type GetOrderByIdRow struct {
 	Order     Order     `json:"order"`
 	OrderItem OrderItem `json:"order_item"`
 }
 
-func (q *Queries) GetOrderById(ctx context.Context, id int64) ([]GetOrderByIdRow, error) {
-	rows, err := q.db.Query(ctx, getOrderById, id)
+func (q *Queries) GetOrderById(ctx context.Context, arg GetOrderByIdParams) ([]GetOrderByIdRow, error) {
+	rows, err := q.db.Query(ctx, getOrderById, arg.ID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +169,7 @@ func (q *Queries) UpdateCountBySku(ctx context.Context, arg UpdateCountBySkuPara
 }
 
 const updateOrder = `-- name: UpdateOrder :exec
-update orders set status = $1, user_id = $2, created_at = $3, updated_at = $4 where id = $5
+update orders set status = $1, user_id = $2, created_at = $3, updated_at = $4 where id = $5 and user_id = $6
 `
 
 type UpdateOrderParams struct {
@@ -130,6 +178,7 @@ type UpdateOrderParams struct {
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 	ID        int64            `json:"id"`
+	UserID_2  int64            `json:"user_id_2"`
 }
 
 func (q *Queries) UpdateOrder(ctx context.Context, arg UpdateOrderParams) error {
@@ -139,21 +188,23 @@ func (q *Queries) UpdateOrder(ctx context.Context, arg UpdateOrderParams) error 
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.ID,
+		arg.UserID_2,
 	)
 	return err
 }
 
 const updateOrderStatus = `-- name: UpdateOrderStatus :exec
-update orders set status = $1 where id = $2
+update orders set status = $1 where id = $2 and user_id = $3
 `
 
 type UpdateOrderStatusParams struct {
 	Status int32 `json:"status"`
 	ID     int64 `json:"id"`
+	UserID int64 `json:"user_id"`
 }
 
 func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) error {
-	_, err := q.db.Exec(ctx, updateOrderStatus, arg.Status, arg.ID)
+	_, err := q.db.Exec(ctx, updateOrderStatus, arg.Status, arg.ID, arg.UserID)
 	return err
 }
 

@@ -23,7 +23,7 @@ func TestAPICases(t *testing.T) {
 		{
 			name:           "Check empty cart",
 			method:         "GET",
-			url:            "http://localhost:8080/user/31337/cart",
+			url:            "http://localhost:8080/user/31336/cart",
 			body:           []byte(``),
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   []byte(`{}`),
@@ -31,7 +31,7 @@ func TestAPICases(t *testing.T) {
 		{
 			name:           "Add product to cart",
 			method:         "POST",
-			url:            "http://localhost:8080/user/31337/cart/773297411",
+			url:            "http://localhost:8080/user/31336/cart/773297411",
 			body:           []byte(`{ "count": 10 }`),
 			expectedStatus: http.StatusOK,
 			expectedBody:   []byte(``),
@@ -39,7 +39,7 @@ func TestAPICases(t *testing.T) {
 		{
 			name:           "Check cart again, expect 773297411 sku",
 			method:         "GET",
-			url:            "http://localhost:8080/user/31337/cart",
+			url:            "http://localhost:8080/user/31336/cart",
 			body:           []byte(``),
 			expectedStatus: http.StatusOK,
 			expectedBody:   []byte(`{"items":[{"sku_id":773297411,"name":"Кроссовки Nike JORDAN","count":10,"price":2202}],"total_price":22020}`),
@@ -47,7 +47,7 @@ func TestAPICases(t *testing.T) {
 		{
 			name:           "Add another product to cart",
 			method:         "POST",
-			url:            "http://localhost:8080/user/31337/cart/2958025",
+			url:            "http://localhost:8080/user/31336/cart/2958025",
 			body:           []byte(`{ "count": 1 }`),
 			expectedStatus: http.StatusOK,
 			expectedBody:   []byte(``),
@@ -55,7 +55,7 @@ func TestAPICases(t *testing.T) {
 		{
 			name:           "Check cart again, expect 2958025 sku",
 			method:         "GET",
-			url:            "http://localhost:8080/user/31337/cart",
+			url:            "http://localhost:8080/user/31336/cart",
 			body:           []byte(``),
 			expectedStatus: http.StatusOK,
 			expectedBody:   []byte(`{"items":[{"sku_id":2958025,"name":"Roxy Music. Stranded. Remastered Edition","count":1,"price":1028},{"sku_id":773297411,"name":"Кроссовки Nike JORDAN","count":10,"price":2202}],"total_price":23048}`),
@@ -63,7 +63,7 @@ func TestAPICases(t *testing.T) {
 		{
 			name:           "Delete 2958025 sku",
 			method:         "DELETE",
-			url:            "http://localhost:8080/user/31337/cart/2958025",
+			url:            "http://localhost:8080/user/31336/cart/2958025",
 			body:           []byte(`{}`),
 			expectedStatus: http.StatusNoContent,
 			expectedBody:   []byte(``),
@@ -71,7 +71,7 @@ func TestAPICases(t *testing.T) {
 		{
 			name:           "Check cart again, expect 773297411 only sku",
 			method:         "GET",
-			url:            "http://localhost:8080/user/31337/cart",
+			url:            "http://localhost:8080/user/31336/cart",
 			body:           []byte(``),
 			expectedStatus: http.StatusOK,
 			expectedBody:   []byte(`{"items":[{"sku_id":773297411,"name":"Кроссовки Nike JORDAN","count":10,"price":2202}],"total_price":22020}`),
@@ -80,14 +80,14 @@ func TestAPICases(t *testing.T) {
 			name:           "Order checkout",
 			method:         "POST",
 			url:            "http://localhost:8080/cart/checkout",
-			body:           []byte(`{ "user_id": 31337 }`),
+			body:           []byte(`{ "user_id": 31336 }`),
 			expectedStatus: http.StatusOK,
 			expectedBody:   []byte(`{"orderID":1}`),
 		},
 		{
 			name:           "Add unknown product, expect error",
 			method:         "POST",
-			url:            "http://localhost:8080/user/31337/cart/404",
+			url:            "http://localhost:8080/user/31336/cart/404",
 			body:           []byte(`{ "count": 1 }`),
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   []byte(``),

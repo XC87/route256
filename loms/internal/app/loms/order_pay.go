@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Server) OrderPay(ctx context.Context, request *servicepb.OrderPayRequest) (*emptypb.Empty, error) {
-	err := s.impl.OrderPay(ctx, request.OrderId)
+	err := s.impl.OrderPay(ctx, request.OrderId, request.UserId)
 	if err != nil {
 		if errors.Is(err, order_usecase.ErrOrderAlreadyPaid) {
 			return nil, status.Errorf(codes.FailedPrecondition, err.Error())

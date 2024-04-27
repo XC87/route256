@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Server) OrderInfo(ctx context.Context, request *servicepb.OrderInfoRequest) (*servicepb.OrderInfoResponse, error) {
-	order, err := s.impl.OrderInfo(ctx, request.OrderId)
+	order, err := s.impl.OrderInfo(ctx, request.OrderId, request.UserId)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, err.Error())
 	}
