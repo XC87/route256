@@ -10,6 +10,7 @@ import (
 	"route256.ozon.ru/project/loms/internal/model"
 	pgs "route256.ozon.ru/project/loms/internal/repository/pgs"
 	"route256.ozon.ru/project/loms/internal/repository/pgs/queries"
+	"sort"
 	"time"
 )
 
@@ -206,7 +207,11 @@ func (repo *OrderPgsRepository) OrderInfoAll(ctx context.Context) ([]*model.Orde
 			lastId = orderInfo.ID
 		}
 	}
-
+	sort.Slice(orderList, func(i, j int) bool {
+		idI := orderList[i].Id / 1000
+		idJ := orderList[j].Id / 1000
+		return idI < idJ
+	})
 	return orderList, nil
 }
 

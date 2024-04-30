@@ -57,6 +57,7 @@ func main() {
 
 	wg := &sync.WaitGroup{}
 	redis := cache.NewRedis(ctx, cartConfig, wg)
+	redis.StartMonitorHitMiss(ctx, cartConfig)
 	cachedService := product.NewCachedService(redis, productService)
 	cartService := service.NewCartService(memoryRepository, cachedService, lomsService)
 

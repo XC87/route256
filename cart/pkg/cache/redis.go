@@ -42,14 +42,14 @@ func NewRedis(ctx context.Context, config *config.Config, wg *sync.WaitGroup) *R
 	return &Redis{cache: redisCache, ttl: config.RedisTTL}
 }
 
-func (r Redis) StartMonitorHitMiss(ctx context.Context, registerer prometheus.Registerer) {
+func (r Redis) StartMonitorHitMiss(ctx context.Context, config *config.Config) {
 	lastHits := r.cache.Stats().Hits
 	lastMiss := r.cache.Stats().Misses
-	cacheHits := promauto.With(registerer).NewCounter(prometheus.CounterOpts{
+	cacheHits := promauto.NewCounter(prometheus.CounterOpts{
 		Name: "cache_hits",
 		Help: "The total number of cache  hits",
 	})
-	cacheMisses := promauto.With(registerer).NewCounter(prometheus.CounterOpts{
+	cacheMisses := promauto.NewCounter(prometheus.CounterOpts{
 		Name: "cache_misses",
 		Help: "The total number of cache misses",
 	})
