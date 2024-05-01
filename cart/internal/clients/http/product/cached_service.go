@@ -13,7 +13,7 @@ import (
 
 type CachedService struct {
 	cacher         Cacher
-	productService ProductService2
+	productService service
 	keyMutex       *keymutex.KeyRWMutex
 }
 
@@ -22,13 +22,12 @@ type Cacher interface {
 	Set(key string, value string) error
 }
 
-type ProductService2 interface {
+type service interface {
 	GetProductList(ctx context.Context, skus []int64) ([]*domain.Product, error)
 	GetProduct(ctx context.Context, sku int64) (*domain.Product, error)
 }
 
-func NewCachedService(client Cacher, service ProductService2) *CachedService {
-
+func NewCachedService(client Cacher, service service) *CachedService {
 	return &CachedService{cacher: client, productService: service, keyMutex: keymutex.NewKeyRWMutex()}
 }
 
